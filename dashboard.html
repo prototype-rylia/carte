@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Rylia — Gestion de la carte</title>
+
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Empêche le zoom iOS au focus */
+    input, select, textarea { font-size: 16px !important; }
+    @media (min-width: 769px) { input, select, textarea { font-size: inherit !important; } }
+
+    :root {
+      --primary:      #FF8C00;
+      --primary-soft: #FFF4E5;
+      --dark:         #111827;
+      --gray:         #6B7280;
+      --gray-light:   #F9FAFB;
+      --border:       #E5E7EB;
+      --white:        #FFFFFF;
+      --success:      #10B981;
+      --success-soft: #ECFDF5;
+      --danger:       #EF4444;
+      --danger-soft:  #FEF2F2;
+      --radius:       12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--gray-light);
+      color: var(--dark);
+      min-height: 100vh;
+    }
+
+    /* ---- Topbar ---- */
+    .topbar {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-brand { display: flex; align-items: center; gap: 10px; }
+
+    .topbar-logo {
+      width: 34px; height: 34px;
+      background: var(--primary);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 16px;
+    }
+
+    .topbar-name { font-size: 16px; font-weight: 700; color: var(--dark); }
+
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .user-badge {
+      font-size: 13px; color: var(--gray);
+      background: var(--gray-light);
+      padding: 5px 10px; border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .btn-logout {
+      font-size: 13px; font-weight: 600; color: var(--gray);
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 6px 14px;
+      cursor: pointer; transition: all 0.2s; font-family: inherit;
+    }
+    .btn-logout:hover { color: var(--dark); border-color: #9CA3AF; }
+
+    /* ---- Layout ---- */
+    .page { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+    .page-header {
+      margin-bottom: 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--dark); }
+    .page-subtitle { font-size: 14px; color: var(--gray); margin-top: 4px; }
+
+    .btn-preview {
+      padding: 10px 18px; background: var(--dark); color: white;
+      border: none; border-radius: 10px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+      display: inline-flex; align-items: center; gap: 8px;
+      text-decoration: none;
+    }
+    .btn-preview:hover { background: #1F2937; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+    /* ---- KPI ---- */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px; margin-bottom: 28px;
+    }
+
+    .kpi-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 22px;
+    }
+
+    .kpi-card.accent { border-left: 3px solid var(--primary); }
+
+    .kpi-label {
+      font-size: 12px; font-weight: 700; color: var(--gray);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+    }
+
+    .kpi-value { font-size: 32px; font-weight: 700; color: var(--dark); line-height: 1; }
+
+    /* ---- Onglets ---- */
+    .tabs-nav-wrap { position: relative; margin-bottom: 28px; }
+
+    .tabs-arrow { display: none; }
+
+    .tabs-nav {
+      display: flex; gap: 4px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .tab-btn {
+      padding: 12px 24px; font-size: 14px; font-weight: 600;
+      background: none; border: none; color: var(--gray);
+      cursor: pointer; transition: all 0.2s; font-family: inherit;
+      border-bottom: 3px solid transparent; margin-bottom: -2px;
+    }
+    .tab-btn:hover { color: var(--dark); }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .tab-content { display: none; animation: tabFadeIn 0.3s ease; }
+    .tab-content.active { display: block; }
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---- Toolbar ---- */
+    .toolbar {
+      display: flex; gap: 12px; margin-bottom: 16px;
+      flex-wrap: wrap; align-items: center;
+    }
+
+    .search-wrap { position: relative; flex: 1; min-width: 200px; }
+
+    .search-wrap svg {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%); color: #9CA3AF; pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%; padding: 9px 14px 9px 36px;
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      font-size: 14px; outline: none; font-family: inherit;
+      color: var(--dark); transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255,140,0,0.1);
+    }
+    .search-input::placeholder { color: #C4C9D4; }
+
+    .filter-select {
+      padding: 9px 14px; border: 1.5px solid var(--border);
+      border-radius: var(--radius); font-size: 14px;
+      color: var(--dark); background: var(--white);
+      outline: none; cursor: pointer; font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .filter-select:focus { border-color: var(--primary); }
+
+    .btn-primary {
+      padding: 9px 18px; background: var(--primary); color: white;
+      border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
+    .btn-primary:hover { background: #E67E00; box-shadow: 0 4px 12px rgba(255,140,0,0.25); }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ---- Table ---- */
+    .table-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead { background: var(--gray-light); border-bottom: 1px solid var(--border); }
+
+    th {
+      padding: 12px 16px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--gray); text-align: left; white-space: nowrap;
+    }
+
+    td {
+      padding: 13px 16px; font-size: 14px; color: var(--dark);
+      border-bottom: 1px solid var(--border); vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background 0.15s; }
+    tbody tr:hover { background: #FFFBF5; }
+
+    .cell-product strong { display: block; font-weight: 600; font-size: 14px; }
+    .cell-product span { display: block; font-size: 12px; color: var(--gray); margin-top: 3px; max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .cell-price { font-weight: 700; color: var(--primary); white-space: nowrap; }
+
+    .cell-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+    .btn-icon {
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 7px; padding: 5px 10px; cursor: pointer;
+      color: var(--gray); font-size: 12px; font-weight: 600;
+      transition: all 0.15s; font-family: inherit;
+    }
+    .btn-icon:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
+    .btn-icon.danger:hover { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+
+    .result-count {
+      font-size: 13px; color: var(--gray);
+      padding: 10px 16px; border-top: 1px solid var(--border);
+      text-align: right;
+    }
+
+    .table-state { padding: 60px 20px; text-align: center; color: var(--gray); }
+    .table-state p { font-size: 14px; }
+
+    .loading-spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--border); border-top-color: var(--primary);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- Cartes Catégories (active-card) ---- */
+    .cat-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .cat-card {
+      background: white; border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 16px 18px; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+    .cat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); border-color: #D1D5DB; }
+
+    .cat-info { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+    .cat-order-badge {
+      background: var(--primary-soft); color: var(--primary);
+      width: 30px; height: 30px; border-radius: 8px;
+      font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .cat-name { font-weight: 700; font-size: 15px; color: var(--dark); }
+    .cat-meta { font-size: 12px; color: var(--gray); margin-top: 2px; }
+
+    .cat-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .btn-move {
+      background: white; border: 1.5px solid var(--border);
+      border-radius: 8px; width: 32px; height: 32px;
+      cursor: pointer; color: var(--gray); font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; font-family: inherit;
+    }
+    .btn-move:hover:not(:disabled) { background: var(--gray-light); color: var(--dark); }
+    .btn-move:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* ---- Formulaire Paramètres ---- */
+    .settings-card {
+      background: var(--white);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 28px; margin-bottom: 20px;
+    }
+
+    .settings-title {
+      font-size: 16px; font-weight: 700; color: var(--dark);
+      margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+
+    .form-group { margin-bottom: 16px; }
+
+    .form-label {
+      display: block; font-size: 13px; font-weight: 600;
+      color: var(--dark); margin-bottom: 6px;
+    }
+
+    .form-input, .form-textarea, .form-select {
+      width: 100%; padding: 11px 14px;
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      font-size: 14px; outline: none; font-family: inherit;
+      background: var(--white); transition: all 0.2s; color: var(--dark);
+    }
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255,140,0,0.1);
+    }
+    .form-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+    .form-hint { font-size: 12px; color: var(--gray); margin-top: 4px; }
+
+    .form-row-inline { display: flex; gap: 10px; align-items: stretch; }
+    .form-row-inline .form-input { flex: 1; }
+
+    .btn-save {
+      padding: 11px 22px; background: var(--dark); color: white;
+      border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-save:hover { background: #1F2937; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .btn-save:disabled { background: var(--gray); cursor: not-allowed; transform: none; }
+
+    /* ---- URL publique ---- */
+    .public-url-box {
+      background: var(--gray-light); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 14px; display: flex; gap: 10px;
+      align-items: center; flex-wrap: wrap;
+    }
+    .public-url {
+      flex: 1; min-width: 200px;
+      font-family: 'Courier New', monospace; font-size: 13px;
+      color: var(--dark); background: white; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: 8px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .btn-copy {
+      padding: 9px 14px; background: white;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-weight: 600; color: var(--dark);
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .btn-copy:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+
+    /* ---- Tags / Checkbox chips ---- */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 7px 14px; border: 1.5px solid var(--border);
+      border-radius: 999px; background: white;
+      font-size: 13px; font-weight: 500; color: var(--gray);
+      cursor: pointer; transition: all 0.15s; user-select: none;
+      font-family: inherit;
+    }
+    .chip:hover { border-color: #D1D5DB; color: var(--dark); }
+    .chip.active {
+      background: var(--primary-soft); color: var(--primary);
+      border-color: var(--primary); font-weight: 600;
+    }
+    .chip.allergen.active {
+      background: var(--danger-soft); color: var(--danger); border-color: var(--danger);
+    }
+
+    /* ---- Modales ---- */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); backdrop-filter: blur(3px);
+      z-index: 500; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.show { display: flex; }
+
+    .modal-box {
+      background: var(--white); border-radius: 16px;
+      width: 100%; max-width: 560px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      overflow: hidden; animation: modalIn 0.2s ease;
+      max-height: 92vh; display: flex; flex-direction: column;
+    }
+    @keyframes modalIn {
+      from { transform: translateY(12px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; color: var(--dark); }
+
+    .modal-close {
+      background: none; border: none; cursor: pointer;
+      color: var(--gray); padding: 4px; border-radius: 6px;
+      display: flex; align-items: center;
+      transition: color 0.15s, background 0.15s; flex-shrink: 0;
+    }
+    .modal-close:hover { color: var(--dark); background: var(--gray-light); }
+
+    .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+
+    .modal-footer {
+      padding: 14px 24px 20px;
+      display: flex; justify-content: flex-end; gap: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-cancel {
+      padding: 9px 18px; background: none; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--gray);
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .btn-cancel:hover { border-color: #9CA3AF; color: var(--dark); }
+
+    .btn-confirm {
+      padding: 9px 20px; background: var(--primary); color: white;
+      border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .btn-confirm:hover { background: #E67E00; }
+    .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-confirm.danger { background: var(--danger); }
+    .btn-confirm.danger:hover { background: #DC2626; }
+
+    /* Message feedback dans modal */
+    .modal-feedback {
+      font-size: 13px; padding: 10px 14px; border-radius: 8px;
+      display: none; margin-top: 12px;
+    }
+    .modal-feedback.show { display: block; }
+    .modal-feedback.error { background: var(--danger-soft); color: #991b1b; border-left: 3px solid var(--danger); }
+
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--dark); color: white;
+      padding: 10px 20px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      z-index: 600; transition: transform 0.3s ease; white-space: nowrap;
+      max-width: 90vw;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+
+    /* ---- Empty state ---- */
+    .empty-state {
+      text-align: center; padding: 60px 20px;
+      background: white; border: 1.5px dashed var(--border); border-radius: 12px;
+    }
+    .empty-state-icon { font-size: 42px; margin-bottom: 12px; }
+    .empty-state h3 { font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+    .empty-state p { font-size: 13px; color: var(--gray); margin-bottom: 16px; }
+
+    /* ---- Full-page loader ---- */
+    .page-loader {
+      position: fixed; inset: 0; background: var(--gray-light);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 14px;
+      z-index: 999;
+    }
+    .page-loader p { font-size: 13px; color: var(--gray); }
+    .page-loader.hidden { display: none; }
+
+    /* ---- Tag display (in product row) ---- */
+    .tag-pill {
+      display: inline-block; padding: 2px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; margin-right: 4px; margin-bottom: 2px;
+      background: var(--primary-soft); color: var(--primary);
+    }
+    .tag-pill.allergen { background: var(--danger-soft); color: var(--danger); }
+
+    /* ---- Liste tags / allergènes (onglet taxonomy) ---- */
+    .taxonomy-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .tax-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: white;
+      transition: all 0.15s;
+    }
+    .tax-row:hover { border-color: #D1D5DB; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+
+    .tax-emoji { font-size: 18px; min-width: 24px; text-align: center; }
+    .tax-pill-preview {
+      padding: 3px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+    }
+    .tax-label { flex: 1; font-size: 14px; font-weight: 500; color: var(--dark); }
+    .tax-actions { display: flex; gap: 6px; }
+
+    .tax-empty {
+      text-align: center; padding: 28px 16px;
+      background: var(--gray-light); border-radius: 10px;
+      color: var(--gray); font-size: 13px;
+    }
+
+    /* ---- Color swatches ---- */
+    .color-swatch {
+      width: 38px; height: 38px;
+      border-radius: 8px; cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+    }
+    .color-swatch:hover { transform: scale(1.05); }
+    .color-swatch.selected { border-color: var(--dark); }
+
+    /* ---- Image upload (modale produit) ---- */
+    .image-upload-area {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--gray-light);
+      border: 2px dashed var(--border);
+      transition: all 0.2s;
+    }
+    .image-upload-area.has-image {
+      border-style: solid;
+      border-color: var(--border);
+      background: white;
+    }
+
+    .image-empty {
+      cursor: pointer;
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--gray);
+      transition: all 0.15s;
+    }
+    .image-empty:hover {
+      background: white;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .image-empty .ic { font-size: 30px; margin-bottom: 6px; display: block; }
+    .image-empty .lbl { font-size: 14px; font-weight: 600; color: var(--dark); }
+    .image-empty .hint { font-size: 12px; color: var(--gray); margin-top: 3px; }
+
+    .image-preview-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 60%;
+      background: var(--gray-light);
+      overflow: hidden;
+    }
+    .image-preview-wrap img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .image-preview-actions {
+      position: absolute; top: 8px; right: 8px;
+      display: flex; gap: 6px;
+    }
+    .image-action-btn {
+      background: rgba(0,0,0,0.65); color: white;
+      border: none; padding: 6px 10px; border-radius: 6px;
+      cursor: pointer; font-size: 12px; font-weight: 600;
+      font-family: inherit;
+      transition: background 0.15s;
+      backdrop-filter: blur(4px);
+    }
+    .image-action-btn:hover { background: rgba(0,0,0,0.85); }
+    .image-action-btn.danger:hover { background: var(--danger); }
+
+    .image-uploading-overlay {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.85);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 10px; backdrop-filter: blur(2px);
+    }
+    .image-uploading-overlay .lbl { font-size: 13px; color: var(--dark); font-weight: 600; }
+
+    /* ---- Thumbnail in product table ---- */
+    .product-thumb {
+      width: 44px; height: 44px;
+      border-radius: 8px;
+      background: var(--gray-light);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .product-thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .product-row-flex {
+      display: flex; align-items: center; gap: 12px;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 768px) {
+      .topbar { padding: 0 12px; height: 54px; }
+      .topbar-name { font-size: 14px; }
+      .topbar-logo { width: 30px; height: 30px; border-radius: 8px; font-size: 14px; }
+      .page { padding: 16px 12px; }
+      .page-title { font-size: 18px; }
+      .page-subtitle { font-size: 12px; }
+      .user-badge { display: none; }
+      .btn-logout { font-size: 12px; padding: 5px 10px; }
+      .btn-preview { padding: 8px 14px; font-size: 13px; }
+
+      .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+      .kpi-card { padding: 14px 16px; }
+      .kpi-value { font-size: 24px; }
+      .kpi-label { font-size: 11px; }
+
+      .tabs-nav-wrap { margin-bottom: 20px; }
+      .tabs-arrow {
+        display: flex;
+        position: absolute; top: 0; bottom: 2px; width: 32px;
+        align-items: center; justify-content: center;
+        background: var(--white); border: none;
+        font-size: 22px; font-weight: 700; color: var(--gray);
+        cursor: pointer; z-index: 5;
+        -webkit-tap-highlight-color: transparent;
+        transition: color 0.15s, opacity 0.2s;
+      }
+      .tabs-arrow:active { color: var(--primary); }
+      .tabs-arrow.hidden { opacity: 0; pointer-events: none; }
+      .tabs-arrow-left { left: 0; box-shadow: 6px 0 10px -4px rgba(255,255,255,0.9); }
+      .tabs-arrow-right { right: 0; box-shadow: -6px 0 10px -4px rgba(255,255,255,0.9); }
+      .tabs-nav {
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        gap: 0; flex-wrap: nowrap;
+        scrollbar-width: none; -ms-overflow-style: none;
+        padding: 0 30px;
+      }
+      .tabs-nav::-webkit-scrollbar { display: none; }
+      .tab-btn { padding: 10px 14px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+
+      .toolbar { flex-direction: column; gap: 8px; }
+      .search-wrap { min-width: 100%; }
+      .filter-select, .btn-primary { width: 100%; justify-content: center; }
+
+      /* Table mobile */
+      th { font-size: 10px; padding: 10px 8px; }
+      td { padding: 10px 8px; font-size: 13px; }
+      th:nth-child(3), td:nth-child(3) { display: none; } /* Hide tags col */
+      .cell-product span { max-width: 180px; }
+      .btn-icon { padding: 5px 8px; font-size: 11px; }
+
+      /* Modal bottom-sheet mobile */
+      .modal-backdrop { padding: 0; align-items: flex-end; }
+      .modal-box {
+        max-width: 100%; border-radius: 20px 20px 0 0;
+        max-height: 92vh; animation: modalSlideUp 0.3s ease;
+      }
+      @keyframes modalSlideUp {
+        from { transform: translateY(100%); }
+        to   { transform: translateY(0); }
+      }
+      .modal-header { padding: 16px 18px 12px; }
+      .modal-body { padding: 16px 18px; }
+      .modal-footer { padding: 12px 18px 16px; flex-direction: column-reverse; }
+      .btn-cancel, .btn-confirm { width: 100%; }
+
+      .settings-card { padding: 18px; }
+      .public-url-box { flex-direction: column; align-items: stretch; }
+      .btn-copy { width: 100%; }
+      .page-header { flex-direction: column; align-items: flex-start; }
+      .btn-preview { width: 100%; justify-content: center; }
+
+      .cat-card { padding: 12px 14px; }
+      .cat-actions { gap: 4px; }
+      .btn-move { width: 30px; height: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loader -->
+<div class="page-loader" id="page-loader">
+  <div class="loading-spinner"></div>
+  <p>Chargement de votre espace…</p>
+</div>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">R</div>
+    <span class="topbar-name">Rylia</span>
+  </div>
+  <div class="topbar-right">
+    <span class="user-badge" id="user-email">—</span>
+    <button class="btn-logout" onclick="handleLogout()">Déconnexion</button>
+  </div>
+</header>
+
+<!-- Page -->
+<main class="page">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Ma carte digitale</h1>
+      <p class="page-subtitle" id="page-subtitle">Gérez vos catégories, produits et paramètres</p>
+    </div>
+    <a class="btn-preview" id="btn-preview" target="_blank">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Voir ma carte
+    </a>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card accent">
+      <div class="kpi-label">Catégories</div>
+      <div class="kpi-value" id="kpi-categories">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Produits</div>
+      <div class="kpi-value" id="kpi-products">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Prix moyen</div>
+      <div class="kpi-value" id="kpi-avg-price">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Plat le plus cher</div>
+      <div class="kpi-value" id="kpi-top-price" style="font-size:18px; padding-top:4px;">—</div>
+    </div>
+  </div>
+
+  <!-- Onglets -->
+  <div class="tabs-nav-wrap">
+    <button class="tabs-arrow tabs-arrow-left" id="tabs-arrow-left" onclick="scrollTabs(-1)">‹</button>
+    <div class="tabs-nav" id="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('products')">🍽️ Produits</button>
+      <button class="tab-btn" onclick="switchTab('categories')">🗂️ Catégories</button>
+      <button class="tab-btn" onclick="switchTab('taxonomy')">🏷️ Tags & Allergènes</button>
+      <button class="tab-btn" onclick="switchTab('settings')">⚙️ Paramètres</button>
+    </div>
+    <button class="tabs-arrow tabs-arrow-right" id="tabs-arrow-right" onclick="scrollTabs(1)">›</button>
+  </div>
+
+  <!-- ============================================
+       ONGLET PRODUITS
+       ============================================ -->
+  <div class="tab-content active" id="tab-products">
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" id="product-search" placeholder="Rechercher un produit…" oninput="renderProducts()">
+      </div>
+      <select class="filter-select" id="product-cat-filter" onchange="renderProducts()">
+        <option value="">Toutes les catégories</option>
+      </select>
+      <button class="btn-primary" onclick="openProductModal()">
+        <span style="font-size:16px; line-height:1;">+</span> Nouveau produit
+      </button>
+    </div>
+
+    <div class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th>Catégorie</th>
+              <th>Tags</th>
+              <th>Prix</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="products-tbody">
+            <tr><td colspan="5"><div class="table-state"><div class="loading-spinner"></div><p>Chargement…</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="result-count" id="products-count" style="display:none;"></div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       ONGLET CATÉGORIES
+       ============================================ -->
+  <div class="tab-content" id="tab-categories">
+
+    <div class="toolbar">
+      <div style="flex:1; font-size:13px; color:var(--gray); min-width:200px;">
+        Organisez vos catégories dans l'ordre où elles apparaitront sur la carte.
+      </div>
+      <button class="btn-primary" onclick="openCategoryModal()">
+        <span style="font-size:16px; line-height:1;">+</span> Nouvelle catégorie
+      </button>
+    </div>
+
+    <div id="categories-container">
+      <div class="table-state"><div class="loading-spinner"></div><p>Chargement…</p></div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       ONGLET TAGS & ALLERGÈNES
+       ============================================ -->
+  <div class="tab-content" id="tab-taxonomy">
+
+    <!-- Tags d'envies -->
+    <div class="settings-card">
+      <h2 class="settings-title">
+        <span>✨</span> Tags d'envies
+        <button class="btn-primary" style="margin-left:auto; padding:7px 14px; font-size:13px;" onclick="openTagModal('tag')">
+          <span style="font-size:14px; line-height:1;">+</span> Ajouter
+        </button>
+      </h2>
+      <p style="font-size:13px; color:var(--gray); margin-bottom:16px;">
+        Ces tags apparaissent sur la carte publique pour aider les clients à filtrer (ex: 🍗 Poulet, 🌱 Végétarien).
+      </p>
+      <div id="tags-container">
+        <div class="table-state" style="padding: 30px;"><p>Chargement…</p></div>
+      </div>
+    </div>
+
+    <!-- Allergènes -->
+    <div class="settings-card">
+      <h2 class="settings-title">
+        <span>⚠️</span> Allergènes
+        <button class="btn-primary" style="margin-left:auto; padding:7px 14px; font-size:13px; background:var(--danger);" onclick="openTagModal('allergen')">
+          <span style="font-size:14px; line-height:1;">+</span> Ajouter
+        </button>
+      </h2>
+      <p style="font-size:13px; color:var(--gray); margin-bottom:16px;">
+        Liste des allergènes que vos produits peuvent contenir (ex: Gluten, Lait, Arachides).
+      </p>
+      <div id="allergens-container">
+        <div class="table-state" style="padding: 30px;"><p>Chargement…</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       ONGLET PARAMÈTRES
+       ============================================ -->
+  <div class="tab-content" id="tab-settings">
+
+    <!-- Infos établissement -->
+    <div class="settings-card">
+      <h2 class="settings-title"><span>🏪</span> Infos de l'établissement</h2>
+
+      <div class="form-group">
+        <label class="form-label">Nom de l'établissement</label>
+        <input type="text" id="settings-name" class="form-input" placeholder="Ex: Rylia Burger">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Slogan <span style="font-weight:400; color:var(--gray);">(optionnel)</span></label>
+        <input type="text" id="settings-slogan" class="form-input" placeholder="Ex: Carte Interactive">
+        <p class="form-hint">Affiché sous le nom sur votre carte digitale</p>
+      </div>
+
+      <button class="btn-save" onclick="saveSettings()" id="btn-save-settings">
+        💾 Enregistrer
+      </button>
+    </div>
+
+    <!-- URL publique -->
+    <div class="settings-card">
+      <h2 class="settings-title"><span>🔗</span> Lien public de votre carte</h2>
+      <p style="font-size:13px; color:var(--gray); margin-bottom:14px;">
+        Partagez ce lien ou imprimez le QR code correspondant pour afficher votre carte à vos clients.
+      </p>
+      <div class="public-url-box">
+        <div class="public-url" id="public-url">—</div>
+        <button class="btn-copy" onclick="copyPublicUrl()">📋 Copier</button>
+      </div>
+    </div>
+
+    <!-- Zone de danger -->
+    <div class="settings-card">
+      <h2 class="settings-title" style="color:var(--danger);"><span>⚠️</span> Zone sensible</h2>
+      <p style="font-size:13px; color:var(--gray); margin-bottom:14px;">
+        Ces actions sont définitives. Utilisez-les avec précaution.
+      </p>
+      <button class="btn-logout" style="color:var(--danger); border-color:#FECACA;" onclick="handleLogout()">
+        Se déconnecter
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<!-- ============================================
+     MODALE CATÉGORIE
+     ============================================ -->
+<div class="modal-backdrop" id="cat-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="cat-modal-title">Nouvelle catégorie</div>
+      <button class="modal-close" onclick="closeCategoryModal()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nom de la catégorie</label>
+        <input type="text" id="cat-name-input" class="form-input" placeholder="Ex: Burgers, Pâtes, Desserts…">
+      </div>
+      <div class="modal-feedback error" id="cat-modal-feedback"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeCategoryModal()">Annuler</button>
+      <button class="btn-confirm" id="cat-modal-confirm" onclick="saveCategory()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODALE PRODUIT
+     ============================================ -->
+<div class="modal-backdrop" id="product-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="product-modal-title">Nouveau produit</div>
+      <button class="modal-close" onclick="closeProductModal()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-group">
+        <label class="form-label">Photo du produit <span style="font-weight:400; color:var(--gray);">(optionnel)</span></label>
+        <div class="image-upload-area" id="image-upload-area">
+          <!-- Contenu généré dynamiquement par renderImageArea() -->
+        </div>
+        <input type="file" id="image-input" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="handleImageSelect(event)">
+        <p class="form-hint">JPG, PNG ou WEBP — automatiquement optimisée</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nom du produit</label>
+        <input type="text" id="prod-name" class="form-input" placeholder="Ex: Le Bœuf & Bacon">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea id="prod-desc" class="form-textarea" placeholder="Ex: Steak haché, cheddar fondant, bacon fumé…"></textarea>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Catégorie</label>
+          <select id="prod-category" class="form-select"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Prix (€)</label>
+          <input type="number" id="prod-price" class="form-input" placeholder="11.00" step="0.10" min="0">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:16px;">
+        <label class="form-label">Tags (envies)</label>
+        <p class="form-hint" style="margin-top:0; margin-bottom:8px;">Sélectionnez les catégories d'envie correspondantes</p>
+        <div class="chip-group" id="prod-tags"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Allergènes présents</label>
+        <p class="form-hint" style="margin-top:0; margin-bottom:8px;">Cochez les allergènes que contient ce produit</p>
+        <div class="chip-group" id="prod-allergens"></div>
+      </div>
+
+      <div class="modal-feedback error" id="product-modal-feedback"></div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeProductModal()">Annuler</button>
+      <button class="btn-confirm" id="product-modal-confirm" onclick="saveProduct()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODALE TAG / ALLERGÈNE
+     ============================================ -->
+<div class="modal-backdrop" id="tag-modal">
+  <div class="modal-box" style="max-width: 480px;">
+    <div class="modal-header">
+      <div class="modal-title" id="tag-modal-title">Nouveau tag</div>
+      <button class="modal-close" onclick="closeTagModal()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-group" id="tag-emoji-group">
+        <label class="form-label">Emoji <span style="font-weight:400; color:var(--gray);">(optionnel)</span></label>
+        <input type="text" id="tag-emoji" class="form-input" placeholder="🍗" maxlength="4">
+        <p class="form-hint">Affiché à côté du libellé sur la carte</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Libellé</label>
+        <input type="text" id="tag-label" class="form-input" placeholder="Ex: Poulet">
+      </div>
+
+      <div class="form-group" id="tag-color-group">
+        <label class="form-label">Couleur du tag</label>
+        <p class="form-hint" style="margin-top:0; margin-bottom:8px;">Comment ce tag apparaitra sur la carte</p>
+        <div id="tag-color-picker" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      </div>
+
+      <!-- Aperçu -->
+      <div class="form-group">
+        <label class="form-label">Aperçu</label>
+        <div style="background:var(--gray-light); padding:14px; border-radius:8px; border:1px dashed var(--border); text-align:center;">
+          <span id="tag-preview" class="tag-pill" style="font-size:13px; padding:5px 12px;">—</span>
+        </div>
+      </div>
+
+      <div class="modal-feedback error" id="tag-modal-feedback"></div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeTagModal()">Annuler</button>
+      <button class="btn-confirm" id="tag-modal-confirm" onclick="saveTag()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODALE CONFIRMATION SUPPRESSION
+     ============================================ -->
+<div class="modal-backdrop" id="confirm-modal">
+  <div class="modal-box" style="max-width: 420px;">
+    <div class="modal-header">
+      <div class="modal-title" id="confirm-title">Confirmer</div>
+      <button class="modal-close" onclick="closeConfirmModal()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-message" style="font-size:14px; color:var(--dark); line-height:1.5;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeConfirmModal()">Annuler</button>
+      <button class="btn-confirm danger" id="confirm-btn">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+
+<script>
+    // ⚠️ ====================================================================
+    // IDENTIFIANT DU CLIENT — à personnaliser pour chaque restaurant
+    // ========================================================================
+    // Uniquement minuscules, chiffres et tirets (ex: "rylia-burger", "pizza-mario")
+    // Ce nom sera l'ID du document dans Firestore : restaurants/{CLIENT_ID}
+    const CLIENT_ID = "rylia-burger";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBpdJ0zmbq6dO5m-LOyiYkApZLeH4nCx9A",
+        authDomain: "carte-digitale-df6c6.firebaseapp.com",
+        projectId: "carte-digitale-df6c6",
+        storageBucket: "carte-digitale-df6c6.firebasestorage.app",
+        messagingSenderId: "890638534522",
+        appId: "1:890638534522:web:1a5720c66107f37a1538c3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // Référence fixe vers le document du restaurant courant
+    const restaurantRef = db.collection("restaurants").doc(CLIENT_ID);
+
+    // Transforme un slug en nom lisible : "rylia-burger" -> "Rylia Burger"
+    function prettifySlug(slug) {
+        return slug.split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    // ========================================================================
+    // ÉTAT GLOBAL
+    // ========================================================================
+    let currentUser = null;
+    let restaurantData = null;         // { name, slogan, ownerUid, ... }
+    let categories = [];               // [{id, name, order}]
+    let products = [];                 // [{id, name, desc, price, categoryId, tags, allergens}]
+    let tags = [];                     // [{id, label, emoji, color, order}]
+    let allergens = [];                // [{id, label, order}]
+    let editingCategoryId = null;
+    let editingProductId = null;
+    let editingTaxId = null;           // id du tag/allergène en édition
+    let editingTaxKind = null;         // "tag" ou "allergen"
+    let pendingConfirm = null;         // fonction à exécuter à la confirmation
+
+    // État image dans la modale produit
+    let imageState = {
+        // null = pas de changement, "remove" = supprimer l'image actuelle, File = nouveau fichier
+        pendingAction: null,
+        previewDataUrl: null,
+        currentUrl: null,
+        currentPath: null
+    };
+
+    // Palette de couleurs disponible pour les tags
+    const TAG_COLORS = [
+        { name: "orange",  bg: "#FFF4E5", fg: "#FF8C00" },
+        { name: "red",     bg: "#FEF2F2", fg: "#DC2626" },
+        { name: "green",   bg: "#ECFDF5", fg: "#059669" },
+        { name: "blue",    bg: "#EFF6FF", fg: "#2563EB" },
+        { name: "purple",  bg: "#FAF5FF", fg: "#9333EA" },
+        { name: "pink",    bg: "#FDF2F8", fg: "#DB2777" },
+        { name: "yellow",  bg: "#FEFCE8", fg: "#CA8A04" },
+        { name: "brown",   bg: "#F5F1ED", fg: "#78350F" },
+        { name: "gray",    bg: "#F3F4F6", fg: "#4B5563" }
+    ];
+
+    // Tags par défaut créés au premier chargement (si aucun tag existant)
+    const DEFAULT_TAGS = [
+        { label: "Poulet",      emoji: "🍗", color: "yellow" },
+        { label: "Bœuf",        emoji: "🥩", color: "brown"  },
+        { label: "Végétarien",  emoji: "🌱", color: "green"  },
+        { label: "Épicé",       emoji: "🌶️", color: "red"    },
+        { label: "Sucré-Salé",  emoji: "🍯", color: "yellow" }
+    ];
+    const DEFAULT_ALLERGENS = [
+        { label: "Gluten" },
+        { label: "Arachides" },
+        { label: "Moutarde" },
+        { label: "Lait" },
+        { label: "Soja" }
+    ];
+
+    // ========================================================================
+    // AUTH
+    // ========================================================================
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = "login.html";
+            return;
+        }
+        currentUser = user;
+        document.getElementById("user-email").innerText = user.email;
+
+        // URL publique (sans param, le CLIENT_ID est codé en dur dans index.html)
+        const publicUrl = `${window.location.origin}${window.location.pathname.replace(/dashboard\.html$/, "")}index.html`;
+        document.getElementById("public-url").innerText = publicUrl;
+        document.getElementById("btn-preview").href = publicUrl;
+
+        await loadAllData();
+        document.getElementById("page-loader").classList.add("hidden");
+    });
+
+    async function handleLogout() {
+        await auth.signOut();
+        window.location.href = "login.html";
+    }
+
+    // ========================================================================
+    // CHARGEMENT DES DONNÉES
+    // ========================================================================
+    async function loadAllData() {
+        try {
+            // Doc restaurant
+            const docSnap = await restaurantRef.get();
+            if (docSnap.exists) {
+                restaurantData = docSnap.data();
+                // Vérif propriétaire : ce compte a-t-il le droit d'éditer ce restaurant ?
+                if (restaurantData.ownerUid && restaurantData.ownerUid !== currentUser.uid) {
+                    showOwnerMismatchError();
+                    return;
+                }
+            } else {
+                // Première connexion : création du doc avec l'utilisateur comme propriétaire
+                restaurantData = {
+                    name: prettifySlug(CLIENT_ID),
+                    slogan: "Carte Interactive",
+                    ownerUid: currentUser.uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                await restaurantRef.set(restaurantData);
+            }
+
+            document.getElementById("settings-name").value = restaurantData.name || "";
+            document.getElementById("settings-slogan").value = restaurantData.slogan || "";
+            document.getElementById("page-subtitle").innerText =
+                restaurantData.name ? `Gestion de la carte — ${restaurantData.name}` : "Gérez vos catégories, produits et paramètres";
+
+            // Catégories
+            const catSnap = await restaurantRef.collection("categories").orderBy("order", "asc").get();
+            categories = catSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            // Produits
+            const prodSnap = await restaurantRef.collection("products").get();
+            products = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            products.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            // Tags d'envies
+            const tagSnap = await restaurantRef.collection("tags").orderBy("order", "asc").get();
+            tags = tagSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            // Allergènes
+            const aSnap = await restaurantRef.collection("allergens").orderBy("order", "asc").get();
+            allergens = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            // Seed initial : si aucune taxonomie n'existe, on crée les listes par défaut
+            if (tags.length === 0 && allergens.length === 0) {
+                await seedDefaultTaxonomy();
+            }
+
+            refreshKPIs();
+            refreshCategoryFilter();
+            renderCategories();
+            renderProducts();
+            renderTaxonomy();
+        } catch (err) {
+            console.error(err);
+            showToast("Erreur de chargement. Rechargez la page.", "error");
+        }
+    }
+
+    async function seedDefaultTaxonomy() {
+        const batch = db.batch();
+        DEFAULT_TAGS.forEach((t, i) => {
+            const ref = restaurantRef.collection("tags").doc();
+            const data = { ...t, order: i, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+            batch.set(ref, data);
+            tags.push({ id: ref.id, ...data });
+        });
+        DEFAULT_ALLERGENS.forEach((a, i) => {
+            const ref = restaurantRef.collection("allergens").doc();
+            const data = { ...a, order: i, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+            batch.set(ref, data);
+            allergens.push({ id: ref.id, ...data });
+        });
+        await batch.commit();
+    }
+
+    function showOwnerMismatchError() {
+        document.getElementById("page-loader").classList.add("hidden");
+        document.body.innerHTML = `
+            <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; font-family:'Segoe UI',system-ui,sans-serif; background:#F9FAFB;">
+                <div style="max-width:440px; background:white; border:1px solid #E5E7EB; border-radius:16px; padding:32px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.06);">
+                    <div style="font-size:44px; margin-bottom:12px;">🔒</div>
+                    <h1 style="font-size:20px; font-weight:700; color:#111827; margin-bottom:10px;">Accès refusé</h1>
+                    <p style="font-size:14px; color:#6B7280; line-height:1.55; margin-bottom:22px;">
+                        Ce compte n'est pas autorisé à gérer la carte <strong>« ${CLIENT_ID} »</strong>.<br>
+                        Connectez-vous avec le bon compte.
+                    </p>
+                    <button onclick="firebase.auth().signOut().then(() => window.location.href='login.html')"
+                        style="padding:11px 22px; background:#111827; color:white; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;">
+                        Se déconnecter
+                    </button>
+                </div>
+            </div>`;
+    }
+
+    // ========================================================================
+    // KPIs
+    // ========================================================================
+    function refreshKPIs() {
+        document.getElementById("kpi-categories").innerText = categories.length;
+        document.getElementById("kpi-products").innerText = products.length;
+
+        if (products.length === 0) {
+            document.getElementById("kpi-avg-price").innerText = "—";
+            document.getElementById("kpi-top-price").innerText = "—";
+        } else {
+            const prices = products.map(p => parseFloat(p.price) || 0);
+            const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+            document.getElementById("kpi-avg-price").innerText = avg.toFixed(2) + "€";
+
+            const topProduct = products.reduce((a, b) =>
+                (parseFloat(b.price) || 0) > (parseFloat(a.price) || 0) ? b : a
+            );
+            document.getElementById("kpi-top-price").innerText =
+                topProduct.name + " — " + (parseFloat(topProduct.price) || 0).toFixed(2) + "€";
+        }
+    }
+
+    // ========================================================================
+    // RENDU CATÉGORIES
+    // ========================================================================
+    function renderCategories() {
+        const container = document.getElementById("categories-container");
+        if (categories.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🗂️</div>
+                    <h3>Aucune catégorie</h3>
+                    <p>Créez votre première catégorie pour organiser votre carte.</p>
+                    <button class="btn-primary" onclick="openCategoryModal()">+ Nouvelle catégorie</button>
+                </div>`;
+            return;
+        }
+        const html = `<div class="cat-list">` + categories.map((c, i) => {
+            const productCount = products.filter(p => p.categoryId === c.id).length;
+            return `
+                <div class="cat-card">
+                    <div class="cat-info">
+                        <div class="cat-order-badge">${i + 1}</div>
+                        <div style="min-width:0; flex:1;">
+                            <div class="cat-name">${escapeHtml(c.name)}</div>
+                            <div class="cat-meta">${productCount} produit${productCount > 1 ? "s" : ""}</div>
+                        </div>
+                    </div>
+                    <div class="cat-actions">
+                        <button class="btn-move" onclick="moveCategory('${c.id}', -1)" ${i === 0 ? "disabled" : ""} title="Monter">↑</button>
+                        <button class="btn-move" onclick="moveCategory('${c.id}', 1)" ${i === categories.length - 1 ? "disabled" : ""} title="Descendre">↓</button>
+                        <button class="btn-icon" onclick="openCategoryModal('${c.id}')" title="Renommer">✏️</button>
+                        <button class="btn-icon danger" onclick="confirmDeleteCategory('${c.id}')" title="Supprimer">🗑️</button>
+                    </div>
+                </div>`;
+        }).join("") + `</div>`;
+        container.innerHTML = html;
+    }
+
+    function refreshCategoryFilter() {
+        const filterSel = document.getElementById("product-cat-filter");
+        const prodSel = document.getElementById("prod-category");
+        const current = filterSel.value;
+        filterSel.innerHTML = `<option value="">Toutes les catégories</option>` +
+            categories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+        if (categories.some(c => c.id === current)) filterSel.value = current;
+
+        prodSel.innerHTML = categories.length === 0
+            ? `<option value="">— Créez d'abord une catégorie —</option>`
+            : categories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+    }
+
+    // ========================================================================
+    // RENDU PRODUITS
+    // ========================================================================
+    function renderProducts() {
+        const tbody = document.getElementById("products-tbody");
+        const countBox = document.getElementById("products-count");
+        const search = (document.getElementById("product-search").value || "").trim().toLowerCase();
+        const catFilter = document.getElementById("product-cat-filter").value;
+
+        let filtered = products;
+        if (catFilter) filtered = filtered.filter(p => p.categoryId === catFilter);
+        if (search) filtered = filtered.filter(p =>
+            (p.name || "").toLowerCase().includes(search) ||
+            (p.description || "").toLowerCase().includes(search)
+        );
+
+        if (products.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5">
+                <div class="table-state">
+                    <div style="font-size:36px; margin-bottom:8px;">🍽️</div>
+                    <p><strong style="color:var(--dark);">Aucun produit pour l'instant</strong></p>
+                    <p style="margin-top:6px;">${categories.length === 0 ? "Créez d'abord une catégorie." : "Cliquez sur « + Nouveau produit » pour commencer."}</p>
+                </div></td></tr>`;
+            countBox.style.display = "none";
+            return;
+        }
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="table-state"><p>Aucun produit ne correspond aux filtres.</p></div></td></tr>`;
+            countBox.style.display = "none";
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(p => {
+            const cat = categories.find(c => c.id === p.categoryId);
+            const catName = cat ? cat.name : "—";
+            const tagsHtml = (p.tags || []).map(tid => {
+                const t = tags.find(x => x.id === tid);
+                if (!t) return "";
+                const c = TAG_COLORS.find(c => c.name === t.color) || TAG_COLORS[0];
+                const emoji = t.emoji ? t.emoji + " " : "";
+                return `<span class="tag-pill" style="background:${c.bg}; color:${c.fg};">${emoji}${escapeHtml(t.label)}</span>`;
+            }).join("") +
+            (p.allergens || []).map(aid => {
+                const a = allergens.find(x => x.id === aid);
+                if (!a) return "";
+                return `<span class="tag-pill allergen">${escapeHtml(a.label)}</span>`;
+            }).join("");
+            const thumbHtml = p.imageUrl
+                ? `<div class="product-thumb"><img src="${escapeHtml(p.imageUrl)}" alt="" loading="lazy"></div>`
+                : `<div class="product-thumb">🍽️</div>`;
+            return `
+                <tr>
+                    <td>
+                        <div class="product-row-flex">
+                            ${thumbHtml}
+                            <div class="cell-product">
+                                <strong>${escapeHtml(p.name || "")}</strong>
+                                <span>${escapeHtml(p.description || "")}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${escapeHtml(catName)}</td>
+                    <td>${tagsHtml || '<span style="color:var(--gray); font-size:12px;">—</span>'}</td>
+                    <td class="cell-price">${(parseFloat(p.price) || 0).toFixed(2)}€</td>
+                    <td>
+                        <div class="cell-actions">
+                            <button class="btn-icon" onclick="openProductModal('${p.id}')" title="Modifier">✏️</button>
+                            <button class="btn-icon danger" onclick="confirmDeleteProduct('${p.id}')" title="Supprimer">🗑️</button>
+                        </div>
+                    </td>
+                </tr>`;
+        }).join("");
+
+        countBox.style.display = "block";
+        countBox.innerText = `${filtered.length} produit${filtered.length > 1 ? "s" : ""} affiché${filtered.length > 1 ? "s" : ""}`;
+    }
+
+    // ========================================================================
+    // CATÉGORIES — CRUD
+    // ========================================================================
+    function openCategoryModal(id = null) {
+        editingCategoryId = id;
+        const input = document.getElementById("cat-name-input");
+        const title = document.getElementById("cat-modal-title");
+        const confirmBtn = document.getElementById("cat-modal-confirm");
+        document.getElementById("cat-modal-feedback").classList.remove("show");
+
+        if (id) {
+            const cat = categories.find(c => c.id === id);
+            title.innerText = "Renommer la catégorie";
+            confirmBtn.innerText = "Enregistrer";
+            input.value = cat ? cat.name : "";
+        } else {
+            title.innerText = "Nouvelle catégorie";
+            confirmBtn.innerText = "Créer";
+            input.value = "";
+        }
+        document.getElementById("cat-modal").classList.add("show");
+        setTimeout(() => input.focus(), 100);
+    }
+
+    function closeCategoryModal() {
+        document.getElementById("cat-modal").classList.remove("show");
+        editingCategoryId = null;
+    }
+
+    async function saveCategory() {
+        const input = document.getElementById("cat-name-input");
+        const feedback = document.getElementById("cat-modal-feedback");
+        const btn = document.getElementById("cat-modal-confirm");
+        const name = input.value.trim();
+
+        feedback.classList.remove("show");
+
+        if (!name) {
+            feedback.innerText = "Le nom est requis.";
+            feedback.classList.add("show");
+            return;
+        }
+
+        if (categories.some(c => c.name.toLowerCase() === name.toLowerCase() && c.id !== editingCategoryId)) {
+            feedback.innerText = "Une catégorie porte déjà ce nom.";
+            feedback.classList.add("show");
+            return;
+        }
+
+        btn.disabled = true;
+        try {
+            if (editingCategoryId) {
+                await restaurantRef.collection("categories").doc(editingCategoryId).update({
+                    name: name,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                const idx = categories.findIndex(c => c.id === editingCategoryId);
+                if (idx >= 0) categories[idx].name = name;
+                showToast("Catégorie renommée", "success");
+            } else {
+                const newCat = {
+                    name: name,
+                    order: categories.length,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                const ref = await restaurantRef.collection("categories").add(newCat);
+                categories.push({ id: ref.id, ...newCat, order: categories.length });
+                showToast("Catégorie créée", "success");
+            }
+            refreshKPIs();
+            refreshCategoryFilter();
+            renderCategories();
+            renderProducts();
+            closeCategoryModal();
+        } catch (err) {
+            console.error(err);
+            feedback.innerText = "Erreur lors de l'enregistrement.";
+            feedback.classList.add("show");
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function moveCategory(id, direction) {
+        const idx = categories.findIndex(c => c.id === id);
+        const target = idx + direction;
+        if (idx < 0 || target < 0 || target >= categories.length) return;
+
+        // Swap
+        [categories[idx], categories[target]] = [categories[target], categories[idx]];
+
+        // Re-order all
+        categories.forEach((c, i) => c.order = i);
+        renderCategories();
+
+        try {
+            const batch = db.batch();
+            categories.forEach((c, i) => {
+                batch.update(restaurantRef.collection("categories").doc(c.id), { order: i });
+            });
+            await batch.commit();
+        } catch (err) {
+            console.error(err);
+            showToast("Erreur de réorganisation", "error");
+        }
+    }
+
+    function confirmDeleteCategory(id) {
+        const cat = categories.find(c => c.id === id);
+        if (!cat) return;
+        const productCount = products.filter(p => p.categoryId === id).length;
+        const msg = productCount > 0
+            ? `La catégorie "${cat.name}" contient ${productCount} produit${productCount > 1 ? "s" : ""}. Ils seront également supprimés. Continuer ?`
+            : `Supprimer la catégorie "${cat.name}" ?`;
+        openConfirmModal("Supprimer la catégorie", msg, async () => {
+            await deleteCategory(id);
+        });
+    }
+
+    async function deleteCategory(id) {
+        try {
+            const batch = db.batch();
+            // Delete all products of this category
+            const relatedProducts = products.filter(p => p.categoryId === id);
+            relatedProducts.forEach(p => {
+                batch.delete(restaurantRef.collection("products").doc(p.id));
+            });
+            // Delete the category
+            batch.delete(restaurantRef.collection("categories").doc(id));
+            await batch.commit();
+
+            // Supprimer les images Storage des produits effacés (en parallèle, best-effort)
+            await Promise.all(
+                relatedProducts
+                    .filter(p => p.imagePath)
+                    .map(p => deleteStorageFile(p.imagePath))
+            );
+
+            products = products.filter(p => p.categoryId !== id);
+            categories = categories.filter(c => c.id !== id);
+            // Re-order remaining categories
+            categories.forEach((c, i) => c.order = i);
+            // Update orders on Firestore
+            if (categories.length > 0) {
+                const batch2 = db.batch();
+                categories.forEach((c, i) => {
+                    batch2.update(restaurantRef.collection("categories").doc(c.id), { order: i });
+                });
+                await batch2.commit();
+            }
+
+            refreshKPIs();
+            refreshCategoryFilter();
+            renderCategories();
+            renderProducts();
+            showToast("Catégorie supprimée", "success");
+        } catch (err) {
+            console.error(err);
+            showToast("Erreur lors de la suppression", "error");
+        }
+    }
+
+    // ========================================================================
+    // PRODUITS — CRUD
+    // ========================================================================
+    function buildProductChips() {
+        const tagsBox = document.getElementById("prod-tags");
+        const allergensBox = document.getElementById("prod-allergens");
+
+        if (tags.length === 0) {
+            tagsBox.innerHTML = `<p style="font-size:13px; color:var(--gray); font-style:italic;">Aucun tag défini. Créez-en dans l'onglet « Tags & Allergènes ».</p>`;
+        } else {
+            tagsBox.innerHTML = tags.map(t => {
+                const c = TAG_COLORS.find(c => c.name === t.color) || TAG_COLORS[0];
+                const emoji = t.emoji ? t.emoji + " " : "";
+                return `<button type="button" class="chip" data-tag="${t.id}" data-bg="${c.bg}" data-fg="${c.fg}" onclick="toggleChip(this)">${emoji}${escapeHtml(t.label)}</button>`;
+            }).join("");
+        }
+
+        if (allergens.length === 0) {
+            allergensBox.innerHTML = `<p style="font-size:13px; color:var(--gray); font-style:italic;">Aucun allergène défini. Créez-en dans l'onglet « Tags & Allergènes ».</p>`;
+        } else {
+            allergensBox.innerHTML = allergens.map(a =>
+                `<button type="button" class="chip allergen" data-tag="${a.id}" onclick="toggleChip(this)">${escapeHtml(a.label)}</button>`
+            ).join("");
+        }
+    }
+
+    // ========================================================================
+    // IMAGES — Sélection, redimensionnement, upload, suppression
+    // ========================================================================
+
+    // Affiche la zone d'image (vide ou avec aperçu)
+    function renderImageArea() {
+        const box = document.getElementById("image-upload-area");
+
+        // Détermine l'image à afficher
+        let imageSrc = null;
+        if (imageState.previewDataUrl) {
+            imageSrc = imageState.previewDataUrl;          // nouveau fichier sélectionné
+        } else if (imageState.pendingAction !== "remove" && imageState.currentUrl) {
+            imageSrc = imageState.currentUrl;              // image existante non supprimée
+        }
+
+        if (imageSrc) {
+            box.classList.add("has-image");
+            box.innerHTML = `
+                <div class="image-preview-wrap">
+                    <img src="${escapeHtml(imageSrc)}" alt="Aperçu">
+                    <div class="image-preview-actions">
+                        <button type="button" class="image-action-btn" onclick="document.getElementById('image-input').click()">Changer</button>
+                        <button type="button" class="image-action-btn danger" onclick="removeProductImage()">×</button>
+                    </div>
+                </div>`;
+        } else {
+            box.classList.remove("has-image");
+            box.innerHTML = `
+                <div class="image-empty" onclick="document.getElementById('image-input').click()">
+                    <span class="ic">📷</span>
+                    <div class="lbl">Cliquez pour ajouter une photo</div>
+                    <div class="hint">JPG, PNG, WEBP — max 10 Mo (sera optimisée)</div>
+                </div>`;
+        }
+    }
+
+    // Sélection d'un fichier depuis l'explorateur
+    function handleImageSelect(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        // Validation basique
+        if (!file.type.startsWith("image/")) {
+            showToast("Format non supporté. Utilisez JPG, PNG ou WEBP.", "error");
+            event.target.value = "";
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            showToast("Image trop volumineuse (10 Mo max).", "error");
+            event.target.value = "";
+            return;
+        }
+
+        // Lire le fichier pour aperçu
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imageState.pendingAction = file;
+            imageState.previewDataUrl = e.target.result;
+            renderImageArea();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Marquer l'image actuelle pour suppression (ou annuler la sélection)
+    function removeProductImage() {
+        if (imageState.previewDataUrl) {
+            // Annuler la nouvelle sélection — revenir à l'image actuelle (ou vide)
+            imageState.pendingAction = null;
+            imageState.previewDataUrl = null;
+        } else if (imageState.currentUrl) {
+            // Supprimer l'image existante
+            imageState.pendingAction = "remove";
+            imageState.currentUrl = null;
+            // currentPath gardé pour pouvoir supprimer le fichier sur Storage
+        }
+        document.getElementById("image-input").value = "";
+        renderImageArea();
+    }
+
+    // Redimensionne et compresse une image côté client
+    // Retourne un Blob JPEG ~1200px max, qualité 85%
+    function resizeImage(file, maxDim = 1200, quality = 0.85) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const reader = new FileReader();
+            reader.onload = (e) => { img.src = e.target.result; };
+            reader.onerror = () => reject(new Error("Lecture du fichier impossible"));
+            img.onload = () => {
+                let w = img.width, h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+                    else       { w = Math.round(w * maxDim / h); h = maxDim; }
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext("2d");
+                ctx.fillStyle = "#FFFFFF"; // fond blanc pour les PNG transparents
+                ctx.fillRect(0, 0, w, h);
+                ctx.drawImage(img, 0, 0, w, h);
+                canvas.toBlob(
+                    (blob) => blob ? resolve(blob) : reject(new Error("Compression impossible")),
+                    "image/jpeg", quality
+                );
+            };
+            img.onerror = () => reject(new Error("Image invalide"));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Upload une image vers Storage et retourne {url, path}
+    async function uploadProductImage(blob, productId) {
+        const path = `restaurants/${CLIENT_ID}/products/${productId}/${Date.now()}.jpg`;
+        const ref = storage.ref(path);
+        await ref.put(blob, { contentType: "image/jpeg" });
+        const url = await ref.getDownloadURL();
+        return { url, path };
+    }
+
+    // Supprime un fichier de Storage (best-effort, n'échoue pas)
+    async function deleteStorageFile(path) {
+        if (!path) return;
+        try {
+            await storage.ref(path).delete();
+        } catch (err) {
+            // Le fichier n'existe peut-être plus — ce n'est pas grave
+            console.warn("Suppression Storage ignorée:", err.code);
+        }
+    }
+
+    function openProductModal(id = null) {
+        if (categories.length === 0) {
+            showToast("Créez d'abord au moins une catégorie.", "error");
+            switchTab("categories");
+            return;
+        }
+
+        editingProductId = id;
+        const title = document.getElementById("product-modal-title");
+        const confirmBtn = document.getElementById("product-modal-confirm");
+        document.getElementById("product-modal-feedback").classList.remove("show");
+
+        // Réinitialiser l'état image
+        imageState = { pendingAction: null, previewDataUrl: null, currentUrl: null, currentPath: null };
+        document.getElementById("image-input").value = "";
+
+        // Reconstruit les chips à chaque ouverture (taxonomie peut avoir changé)
+        buildProductChips();
+
+        if (id) {
+            const p = products.find(pr => pr.id === id);
+            title.innerText = "Modifier le produit";
+            confirmBtn.innerText = "Enregistrer";
+            document.getElementById("prod-name").value = p.name || "";
+            document.getElementById("prod-desc").value = p.description || "";
+            document.getElementById("prod-category").value = p.categoryId || "";
+            document.getElementById("prod-price").value = (parseFloat(p.price) || "").toString();
+
+            // Charger l'image existante si présente
+            if (p.imageUrl) {
+                imageState.currentUrl = p.imageUrl;
+                imageState.currentPath = p.imagePath || null;
+            }
+
+            (p.tags || []).forEach(t => {
+                const chip = document.querySelector(`#prod-tags .chip[data-tag="${t}"]`);
+                if (chip) chip.classList.add("active");
+            });
+            (p.allergens || []).forEach(t => {
+                const chip = document.querySelector(`#prod-allergens .chip[data-tag="${t}"]`);
+                if (chip) chip.classList.add("active");
+            });
+        } else {
+            title.innerText = "Nouveau produit";
+            confirmBtn.innerText = "Créer";
+            document.getElementById("prod-name").value = "";
+            document.getElementById("prod-desc").value = "";
+            document.getElementById("prod-category").value =
+                document.getElementById("product-cat-filter").value || (categories[0] && categories[0].id) || "";
+            document.getElementById("prod-price").value = "";
+        }
+
+        renderImageArea();
+
+        document.getElementById("product-modal").classList.add("show");
+        setTimeout(() => document.getElementById("prod-name").focus(), 100);
+    }
+
+    function closeProductModal() {
+        document.getElementById("product-modal").classList.remove("show");
+        editingProductId = null;
+    }
+
+    function toggleChip(btn) {
+        btn.classList.toggle("active");
+        // Coloriser dynamiquement le chip de tag actif
+        if (btn.dataset.bg && !btn.classList.contains("allergen")) {
+            if (btn.classList.contains("active")) {
+                btn.style.background = btn.dataset.bg;
+                btn.style.color = btn.dataset.fg;
+                btn.style.borderColor = btn.dataset.fg;
+            } else {
+                btn.style.background = "";
+                btn.style.color = "";
+                btn.style.borderColor = "";
+            }
+        }
+    }
+
+    async function saveProduct() {
+        const feedback = document.getElementById("product-modal-feedback");
+        const btn = document.getElementById("product-modal-confirm");
+        feedback.classList.remove("show");
+
+        const name = document.getElementById("prod-name").value.trim();
+        const description = document.getElementById("prod-desc").value.trim();
+        const categoryId = document.getElementById("prod-category").value;
+        const priceStr = document.getElementById("prod-price").value;
+        const price = parseFloat(priceStr);
+        const selectedTags = Array.from(document.querySelectorAll("#prod-tags .chip.active")).map(c => c.dataset.tag);
+        const selectedAllergens = Array.from(document.querySelectorAll("#prod-allergens .chip.active")).map(c => c.dataset.tag);
+
+        if (!name) {
+            feedback.innerText = "Le nom est requis.";
+            feedback.classList.add("show");
+            return;
+        }
+        if (!categoryId) {
+            feedback.innerText = "Sélectionnez une catégorie.";
+            feedback.classList.add("show");
+            return;
+        }
+        if (!priceStr || isNaN(price) || price < 0) {
+            feedback.innerText = "Le prix doit être un nombre positif.";
+            feedback.classList.add("show");
+            return;
+        }
+
+        btn.disabled = true;
+        const originalBtnText = btn.innerText;
+
+        try {
+            const data = {
+                name, description, categoryId, price,
+                tags: selectedTags,
+                allergens: selectedAllergens,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // 1) Créer/mettre à jour le produit (sans image pour l'instant)
+            let productId = editingProductId;
+            if (editingProductId) {
+                await restaurantRef.collection("products").doc(editingProductId).update(data);
+                const idx = products.findIndex(p => p.id === editingProductId);
+                if (idx >= 0) products[idx] = { ...products[idx], ...data };
+            } else {
+                data.order = products.filter(p => p.categoryId === categoryId).length;
+                data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                const ref = await restaurantRef.collection("products").add(data);
+                productId = ref.id;
+                products.push({ id: productId, ...data });
+            }
+
+            // 2) Gestion de l'image
+            const oldPath = imageState.currentPath;
+            let needsImageUpdate = false;
+            const imageUpdate = {};
+
+            if (imageState.pendingAction instanceof File) {
+                // Upload d'une nouvelle image (création OU remplacement)
+                btn.innerText = "Optimisation…";
+                const blob = await resizeImage(imageState.pendingAction);
+
+                btn.innerText = "Téléchargement…";
+                const { url, path } = await uploadProductImage(blob, productId);
+
+                imageUpdate.imageUrl = url;
+                imageUpdate.imagePath = path;
+                needsImageUpdate = true;
+
+                // Supprimer l'ancienne image si elle existait
+                if (editingProductId && oldPath && oldPath !== path) {
+                    await deleteStorageFile(oldPath);
+                }
+            } else if (imageState.pendingAction === "remove") {
+                // Suppression de l'image existante
+                imageUpdate.imageUrl = firebase.firestore.FieldValue.delete();
+                imageUpdate.imagePath = firebase.firestore.FieldValue.delete();
+                needsImageUpdate = true;
+
+                if (oldPath) {
+                    await deleteStorageFile(oldPath);
+                }
+            }
+
+            if (needsImageUpdate) {
+                btn.innerText = "Enregistrement…";
+                await restaurantRef.collection("products").doc(productId).update(imageUpdate);
+                const idx = products.findIndex(p => p.id === productId);
+                if (idx >= 0) {
+                    if (imageUpdate.imageUrl && typeof imageUpdate.imageUrl === "string") {
+                        products[idx].imageUrl = imageUpdate.imageUrl;
+                        products[idx].imagePath = imageUpdate.imagePath;
+                    } else {
+                        delete products[idx].imageUrl;
+                        delete products[idx].imagePath;
+                    }
+                }
+            }
+
+            showToast(editingProductId ? "Produit modifié" : "Produit créé", "success");
+            refreshKPIs();
+            renderProducts();
+            closeProductModal();
+        } catch (err) {
+            console.error(err);
+            feedback.innerText = err.message || "Erreur lors de l'enregistrement.";
+            feedback.classList.add("show");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = originalBtnText;
+        }
+    }
+
+    function confirmDeleteProduct(id) {
+        const p = products.find(pr => pr.id === id);
+        if (!p) return;
+        openConfirmModal("Supprimer le produit", `Supprimer "${p.name}" ? Cette action est définitive.`, async () => {
+            await deleteProduct(id);
+        });
+    }
+
+    async function deleteProduct(id) {
+        try {
+            const product = products.find(p => p.id === id);
+            // Supprimer l'image associée du Storage (si elle existe)
+            if (product && product.imagePath) {
+                await deleteStorageFile(product.imagePath);
+            }
+            await restaurantRef.collection("products").doc(id).delete();
+            products = products.filter(p => p.id !== id);
+            refreshKPIs();
+            renderCategories(); // for the product count
+            renderProducts();
+            showToast("Produit supprimé", "success");
+        } catch (err) {
+            console.error(err);
+            showToast("Erreur lors de la suppression", "error");
+        }
+    }
+
+    // ========================================================================
+    // PARAMÈTRES
+    // ========================================================================
+    async function saveSettings() {
+        const btn = document.getElementById("btn-save-settings");
+        const name = document.getElementById("settings-name").value.trim();
+        const slogan = document.getElementById("settings-slogan").value.trim();
+
+        if (!name) {
+            showToast("Le nom de l'établissement est requis", "error");
+            return;
+        }
+
+        btn.disabled = true;
+        try {
+            await restaurantRef.set({
+                name, slogan,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            restaurantData.name = name;
+            restaurantData.slogan = slogan;
+            document.getElementById("page-subtitle").innerText = `Gestion de la carte — ${name}`;
+            showToast("Paramètres enregistrés", "success");
+        } catch (err) {
+            console.error(err);
+            showToast("Erreur d'enregistrement", "error");
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function copyPublicUrl() {
+        const url = document.getElementById("public-url").innerText;
+        navigator.clipboard.writeText(url).then(() => {
+            showToast("Lien copié dans le presse-papiers", "success");
+        }).catch(() => {
+            showToast("Impossible de copier", "error");
+        });
+    }
+
+    // ========================================================================
+    // TAXONOMIE — TAGS & ALLERGÈNES
+    // ========================================================================
+    function renderTaxonomy() {
+        // Tags
+        const tagsBox = document.getElementById("tags-container");
+        if (tags.length === 0) {
+            tagsBox.innerHTML = `<div class="tax-empty">Aucun tag pour l'instant. Cliquez sur « Ajouter ».</div>`;
+        } else {
+            tagsBox.innerHTML = `<div class="taxonomy-list">` + tags.map((t, i) => {
+                const c = TAG_COLORS.find(x => x.name === t.color) || TAG_COLORS[0];
+                const usageCount = products.filter(p => (p.tags || []).includes(t.id)).length;
+                return `
+                    <div class="tax-row">
+                        <span class="tax-emoji">${escapeHtml(t.emoji || "")}</span>
+                        <span class="tax-pill-preview" style="background:${c.bg}; color:${c.fg};">${escapeHtml(t.label)}</span>
+                        <span class="tax-label" style="font-size:12px; color:var(--gray); flex:0 1 auto;">${usageCount} produit${usageCount > 1 ? "s" : ""}</span>
+                        <span style="flex:1;"></span>
+                        <div class="tax-actions">
+                            <button class="btn-move" onclick="moveTaxonomy('tag', '${t.id}', -1)" ${i === 0 ? "disabled" : ""}>↑</button>
+                            <button class="btn-move" onclick="moveTaxonomy('tag', '${t.id}', 1)" ${i === tags.length - 1 ? "disabled" : ""}>↓</button>
+                            <button class="btn-icon" onclick="openTagModal('tag', '${t.id}')" title="Modifier">✏️</button>
+                            <button class="btn-icon danger" onclick="confirmDeleteTaxonomy('tag', '${t.id}')" title="Supprimer">🗑️</button>
+                        </div>
+                    </div>`;
+            }).join("") + `</div>`;
+        }
+
+        // Allergènes
+        const aBox = document.getElementById("allergens-container");
+        if (allergens.length === 0) {
+            aBox.innerHTML = `<div class="tax-empty">Aucun allergène pour l'instant. Cliquez sur « Ajouter ».</div>`;
+        } else {
+            aBox.innerHTML = `<div class="taxonomy-list">` + allergens.map((a, i) => {
+                const usageCount = products.filter(p => (p.allergens || []).includes(a.id)).length;
+                return `
+                    <div class="tax-row">
+                        <span class="tax-pill-preview" style="background:var(--danger-soft); color:var(--danger);">${escapeHtml(a.label)}</span>
+                        <span class="tax-label" style="font-size:12px; color:var(--gray); flex:0 1 auto;">${usageCount} produit${usageCount > 1 ? "s" : ""}</span>
+                        <span style="flex:1;"></span>
+                        <div class="tax-actions">
+                            <button class="btn-move" onclick="moveTaxonomy('allergen', '${a.id}', -1)" ${i === 0 ? "disabled" : ""}>↑</button>
+                            <button class="btn-move" onclick="moveTaxonomy('allergen', '${a.id}', 1)" ${i === allergens.length - 1 ? "disabled" : ""}>↓</button>
+                            <button class="btn-icon" onclick="openTagModal('allergen', '${a.id}')" title="Modifier">✏️</button>
+                            <button class="btn-icon danger" onclick="confirmDeleteTaxonomy('allergen', '${a.id}')" title="Supprimer">🗑️</button>
+                        </div>
+                    </div>`;
+            }).join("") + `</div>`;
+        }
+    }
+
+    function openTagModal(kind, id = null) {
+        editingTaxKind = kind;
+        editingTaxId = id;
+        const isTag = kind === "tag";
+
+        const modal = document.getElementById("tag-modal");
+        const title = document.getElementById("tag-modal-title");
+        const confirmBtn = document.getElementById("tag-modal-confirm");
+        const labelInput = document.getElementById("tag-label");
+        const emojiInput = document.getElementById("tag-emoji");
+        const emojiGroup = document.getElementById("tag-emoji-group");
+        const colorGroup = document.getElementById("tag-color-group");
+        document.getElementById("tag-modal-feedback").classList.remove("show");
+
+        // Allergènes : pas d'emoji ni de couleur (toujours rouge)
+        emojiGroup.style.display = isTag ? "block" : "none";
+        colorGroup.style.display = isTag ? "block" : "none";
+
+        let item = null;
+        if (id) {
+            item = (isTag ? tags : allergens).find(x => x.id === id);
+        }
+
+        if (item) {
+            title.innerText = isTag ? "Modifier le tag" : "Modifier l'allergène";
+            confirmBtn.innerText = "Enregistrer";
+            labelInput.value = item.label || "";
+            emojiInput.value = item.emoji || "";
+        } else {
+            title.innerText = isTag ? "Nouveau tag" : "Nouvel allergène";
+            confirmBtn.innerText = "Créer";
+            labelInput.value = "";
+            emojiInput.value = "";
+        }
+
+        // Color picker
+        if (isTag) {
+            const picker = document.getElementById("tag-color-picker");
+            const selectedColor = item ? item.color : "orange";
+            picker.innerHTML = TAG_COLORS.map(c => `
+                <div class="color-swatch ${c.name === selectedColor ? "selected" : ""}"
+                     data-color="${c.name}"
+                     style="background:${c.bg}; color:${c.fg};"
+                     onclick="selectTagColor('${c.name}')">A</div>
+            `).join("");
+        }
+
+        updateTagPreview();
+        labelInput.oninput = updateTagPreview;
+        emojiInput.oninput = updateTagPreview;
+
+        modal.classList.add("show");
+        setTimeout(() => labelInput.focus(), 100);
+    }
+
+    function selectTagColor(colorName) {
+        document.querySelectorAll("#tag-color-picker .color-swatch").forEach(s => {
+            s.classList.toggle("selected", s.dataset.color === colorName);
+        });
+        updateTagPreview();
+    }
+
+    function updateTagPreview() {
+        const preview = document.getElementById("tag-preview");
+        const isTag = editingTaxKind === "tag";
+        const label = (document.getElementById("tag-label").value || "").trim() || "Aperçu";
+
+        if (isTag) {
+            const emoji = (document.getElementById("tag-emoji").value || "").trim();
+            const selected = document.querySelector("#tag-color-picker .color-swatch.selected");
+            const colorName = selected ? selected.dataset.color : "orange";
+            const c = TAG_COLORS.find(x => x.name === colorName) || TAG_COLORS[0];
+            preview.style.background = c.bg;
+            preview.style.color = c.fg;
+            preview.innerText = (emoji ? emoji + " " : "") + label;
+        } else {
+            preview.style.background = "var(--danger-soft)";
+            preview.style.color = "var(--danger)";
+            preview.innerText = label;
+        }
+    }
+
+    function closeTagModal() {
+        document.getElementById("tag-modal").classList.remove("show");
+        editingTaxId = null;
+        editingTaxKind = null;
+    }
+
+    async function saveTag() {
+        const feedback = document.getElementById("tag-modal-feedback");
+        const btn = document.getElementById("tag-modal-confirm");
+        feedback.classList.remove("show");
+
+        const isTag = editingTaxKind === "tag";
+        const label = document.getElementById("tag-label").value.trim();
+
+        if (!label) {
+            feedback.innerText = "Le libellé est requis.";
+            feedback.classList.add("show");
+            return;
+        }
+
+        const list = isTag ? tags : allergens;
+        if (list.some(x => x.label.toLowerCase() === label.toLowerCase() && x.id !== editingTaxId)) {
+            feedback.innerText = "Ce libellé existe déjà.";
+            feedback.classList.add("show");
+            return;
+        }
+
+        const data = { label, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        if (isTag) {
+            data.emoji = document.getElementById("tag-emoji").value.trim();
+            const selected = document.querySelector("#tag-color-picker .color-swatch.selected");
+            data.color = selected ? selected.dataset.color : "orange";
+        }
+
+        const collection = isTag ? "tags" : "allergens";
+
+        btn.disabled = true;
+        try {
+            if (editingTaxId) {
+                await restaurantRef.collection(collection).doc(editingTaxId).update(data);
+                const idx = list.findIndex(x => x.id === editingTaxId);
+                if (idx >= 0) list[idx] = { ...list[idx], ...data };
+                showToast(isTag ? "Tag modifié" : "Allergène modifié", "success");
+            } else {
+                data.order = list.length;
+                data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                const ref = await restaurantRef.collection(collection).add(data);
+                list.push({ id: ref.id, ...data });
+                showToast(isTag ? "Tag créé" : "Allergène créé", "success");
+            }
+            renderTaxonomy();
+            renderProducts();
+            closeTagModal();
+        } catch (err) {
+            console.error(err);
+            feedback.innerText = "Erreur lors de l'enregistrement.";
+            feedback.classList.add("show");
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function moveTaxonomy(kind, id, direction) {
+        const isTag = kind === "tag";
+        const list = isTag ? tags : allergens;
+        const collection = isTag ? "tags" : "allergens";
+
+        const idx = list.findIndex(x => x.id === id);
+        const target = idx + direction;
+        if (idx < 0 || target < 0 || target >= list.length) return;
+
+        [list[idx], list[target]] = [list[target], list[idx]];
+        list.forEach((x, i) => x.order = i);
+        renderTaxonomy();
+
+        try {
+            const batch = db.batch();
+            list.forEach((x, i) => {
+                batch.update(restaurantRef.collection(collection).doc(x.id), { order: i });
+            });
+            await batch.commit();
+        } catch (err) {
+            console.error(err);
+            showToast("Erreur de réorganisation", "error");
+        }
+    }
+
+    function confirmDeleteTaxonomy(kind, id) {
+        const isTag = kind === "tag";
+        const list = isTag ? tags : allergens;
+        const item = list.find(x => x.id === id);
+        if (!item) return;
+
+        const usageCount = products.filter(p =>
+            ((isTag ? p.tags : p.allergens) || []).includes(id)
+        ).length;
+
+        const noun = isTag ? "ce tag" : "cet allergène";
+        const msg = usageCount > 0
+            ? `${usageCount} produit${usageCount > 1 ? "s utilisent" : " utilise"} ${noun}. Il sera retiré de ${usageCount > 1 ? "ces produits" : "ce produit"}. Continuer ?`
+            : `Supprimer définitivement « ${item.label} » ?`;
+
+        openConfirmModal(`Supprimer ${isTag ? "le tag" : "l'allergène"}`, msg, async () => {
+            await deleteTaxonomy(kind, id);
+        });
+    }
+
+    async function deleteTaxonomy(kind, id) {
+        const isTag = kind === "tag";
+        const collection = isTag ? "tags" : "allergens";
+        const field = isTag ? "tags" : "allergens";
+
+        try {
+            const batch = db.batch();
+            // Retirer cet ID de tous les produits qui le référencent
+            products.forEach(p => {
+                const arr = p[field] || [];
+                if (arr.includes(id)) {
+                    const newArr = arr.filter(x => x !== id);
+                    batch.update(restaurantRef.collection("products").doc(p.id), { [field]: newArr });
+                    p[field] = newArr;
+                }
+            });
+            // Supprimer le tag/allergène
+            batch.delete(restaurantRef.collection(collection).doc(id));
+            await batch.commit();
+
+            if (isTag) tags = tags.filter(x => x.id !== id);
+            else allergens = allergens.filter(x => x.id !== id);
+
+            renderTaxonomy();
+            renderProducts();
+            showToast(isTag ? "Tag supprimé" : "Allergène supprimé", "success");
+        } catch (err) {
+            console.error(err);
+            showToast("Erreur lors de la suppression", "error");
+        }
+    }
+
+    // ========================================================================
+    // MODALE DE CONFIRMATION
+    // ========================================================================
+    function openConfirmModal(title, message, onConfirm) {
+        document.getElementById("confirm-title").innerText = title;
+        document.getElementById("confirm-message").innerText = message;
+        pendingConfirm = onConfirm;
+        document.getElementById("confirm-modal").classList.add("show");
+    }
+    function closeConfirmModal() {
+        document.getElementById("confirm-modal").classList.remove("show");
+        pendingConfirm = null;
+    }
+    document.getElementById("confirm-btn").addEventListener("click", async () => {
+        if (pendingConfirm) {
+            const fn = pendingConfirm;
+            closeConfirmModal();
+            await fn();
+        }
+    });
+
+    // ========================================================================
+    // ONGLETS
+    // ========================================================================
+    function switchTab(tab) {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+
+        const btn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.getAttribute("onclick")?.includes(`'${tab}'`));
+        if (btn) btn.classList.add("active");
+        const content = document.getElementById("tab-" + tab);
+        if (content) content.classList.add("active");
+
+        updateTabArrows();
+    }
+
+    function scrollTabs(dir) {
+        const nav = document.getElementById("tabs-nav");
+        nav.scrollBy({ left: dir * 150, behavior: "smooth" });
+    }
+    function updateTabArrows() {
+        const nav = document.getElementById("tabs-nav");
+        const left = document.getElementById("tabs-arrow-left");
+        const right = document.getElementById("tabs-arrow-right");
+        if (!nav || !left || !right) return;
+        left.classList.toggle("hidden", nav.scrollLeft <= 5);
+        right.classList.toggle("hidden", nav.scrollLeft >= nav.scrollWidth - nav.clientWidth - 5);
+    }
+    document.getElementById("tabs-nav").addEventListener("scroll", updateTabArrows);
+    window.addEventListener("resize", updateTabArrows);
+    setTimeout(updateTabArrows, 200);
+
+    // ========================================================================
+    // HELPERS
+    // ========================================================================
+    function escapeHtml(str) {
+        return String(str || "").replace(/[&<>"']/g, c => ({
+            "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        }[c]));
+    }
+
+    let toastTimer = null;
+    function showToast(msg, type = "") {
+        const t = document.getElementById("toast");
+        t.innerText = msg;
+        t.className = "toast show " + type;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
+    }
+
+    // Fermer les modales avec Echap
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            closeProductModal();
+            closeCategoryModal();
+            closeConfirmModal();
+            closeTagModal();
+        }
+    });
+
+    // Fermer les modales en cliquant sur le fond
+    document.querySelectorAll(".modal-backdrop").forEach(bd => {
+        bd.addEventListener("click", (e) => {
+            if (e.target === bd) {
+                if (bd.id === "product-modal") closeProductModal();
+                else if (bd.id === "cat-modal") closeCategoryModal();
+                else if (bd.id === "confirm-modal") closeConfirmModal();
+                else if (bd.id === "tag-modal") closeTagModal();
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

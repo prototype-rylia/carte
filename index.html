@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Carte Digitale</title>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary-orange: #FF6B00;
+            --dark-orange: #E56000;
+            --text-dark: #1a1a1a;
+            --text-grey: #666;
+            --bg-light: #f8f9fa;
+            --white: #ffffff;
+            --shadow: 0 8px 25px rgba(0,0,0,0.06);
+            --danger-red: #ff4d4d;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            padding-bottom: 80px;
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--white);
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.04);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .restaurant-name { font-size: 1.5rem; font-weight: 800; color: var(--primary-orange); letter-spacing: -0.5px; }
+        .restaurant-slogan { font-size: 0.85rem; color: var(--text-grey); font-style: italic; margin-top: 2px;}
+
+        .filters-wrapper {
+            background: var(--white);
+            padding: 20px 0 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .filter-group { margin-bottom: 20px; text-align: center; }
+        .filter-group.empty { display: none; }
+
+        .filter-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .scroll-container {
+            display: flex;
+            justify-content: flex-start;
+            overflow-x: auto;
+            gap: 12px;
+            padding: 0 20px 5px 20px;
+            scrollbar-width: none;
+        }
+        .scroll-container::-webkit-scrollbar { display: none; }
+
+        .btn-envie {
+            flex-shrink: 0;
+            padding: 10px 18px;
+            background: var(--bg-light);
+            border: 1px solid #eee;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+        }
+        .btn-envie.active {
+            background: var(--primary-orange);
+            color: white;
+            border-color: var(--primary-orange);
+            box-shadow: 0 4px 12px rgba(255, 107, 0, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .btn-allergy {
+            flex-shrink: 0;
+            padding: 8px 16px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-grey);
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+            font-family: inherit;
+        }
+        .btn-allergy.active {
+            background: #fff5f5;
+            color: var(--danger-red);
+            border-color: #ffcccc;
+            font-weight: 600;
+        }
+        .btn-allergy.active::before { content: "🚫 "; }
+
+        .categories-nav {
+            display: flex;
+            justify-content: flex-start;
+            background: var(--white);
+            padding: 0;
+            margin-top: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border-radius: 0 0 15px 15px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .categories-nav::-webkit-scrollbar { display: none; }
+
+        .cat-btn {
+            flex: 1;
+            min-width: fit-content;
+            text-align: center;
+            background: none;
+            border: none;
+            padding: 18px 20px;
+            font-family: inherit;
+            color: #999;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            position: relative;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+        .cat-btn.active { color: var(--primary-orange); }
+        .cat-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40%;
+            height: 4px;
+            background: var(--primary-orange);
+            border-radius: 4px 4px 0 0;
+        }
+
+        .menu-section {
+            padding: 25px 20px 0 20px;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .menu-section.active-section { display: block; }
+
+        .dish-card {
+            background: var(--white);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: transform 0.2s;
+        }
+        .dish-card:active { transform: scale(0.98); }
+
+        .dish-image {
+            width: 100%;
+            height: 180px;
+            background: var(--bg-light);
+            overflow: hidden;
+            position: relative;
+        }
+        .dish-image img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .dish-content { padding: 20px; }
+
+        .dish-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            gap: 12px;
+        }
+        .dish-name { font-size: 1.2rem; font-weight: 700; line-height: 1.2; flex: 1; }
+        .dish-price { font-weight: 800; color: var(--primary-orange); font-size: 1.2rem; white-space: nowrap; }
+        .dish-desc { font-size: 0.95rem; color: var(--text-grey); margin-bottom: 5px; line-height: 1.5; }
+
+        .dish-footer {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f8f8f8;
+        }
+
+        .tag {
+            font-size: 0.75rem; padding: 5px 10px; border-radius: 8px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        .allergen-info {
+            font-size: 0.7rem;
+            color: #aaa;
+            margin-left: auto;
+            font-style: italic;
+        }
+
+        .no-results, .loading-state, .error-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-grey);
+            display: none;
+        }
+        .no-results.show, .loading-state.show, .error-state.show { display: block; }
+        .no-results h3, .error-state h3 { margin-bottom: 10px; font-size: 1.2rem; }
+
+        .spinner-big {
+            width: 36px; height: 36px;
+            border: 3px solid #eee;
+            border-top-color: var(--primary-orange);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .footer-legal {
+            text-align: center;
+            padding: 30px 20px;
+            margin-top: 20px;
+        }
+        .btn-cgu {
+            display: inline-block;
+            font-size: 12px;
+            color: var(--text-grey);
+            text-decoration: underline;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-reset-filters {
+            margin-top: 15px;
+            color: var(--primary-orange);
+            border: none;
+            background: none;
+            text-decoration: underline;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="restaurant-name" id="restaurant-name">—</div>
+        <div class="restaurant-slogan" id="restaurant-slogan"></div>
+    </header>
+
+    <div class="loading-state show" id="loading-state">
+        <div class="spinner-big"></div>
+        <p>Chargement de la carte…</p>
+    </div>
+
+    <div class="error-state" id="error-state">
+        <h3>Carte introuvable 😕</h3>
+        <p>Cet établissement n'est pas encore configuré.</p>
+    </div>
+
+    <div id="main-content" style="display:none;">
+
+        <div class="filters-wrapper">
+            <div class="filter-group" id="envies-group">
+                <div class="filter-title">✨ Mes Envies</div>
+                <div class="scroll-container" id="envies-container"></div>
+            </div>
+
+            <div class="filter-group" id="allergies-group" style="margin-bottom: 5px;">
+                <div class="filter-title" style="color:var(--danger-red);">⚠️ Mes Allergies</div>
+                <div class="scroll-container" id="allergies-container"></div>
+            </div>
+        </div>
+
+        <div class="categories-nav" id="categories-nav"></div>
+
+        <div id="menu-sections"></div>
+
+        <div class="no-results" id="no-results-msg">
+            <h3>Aucun plat trouvé 😕</h3>
+            <p>Essayez de modifier vos filtres pour voir d'autres résultats.</p>
+            <button class="btn-reset-filters" onclick="resetFilters()">Effacer les filtres</button>
+        </div>
+
+        <footer class="footer-legal">
+            <button class="btn-cgu" onclick="openLegalPage()">Mentions Légales, CGU</button>
+        </footer>
+    </div>
+
+    <script>
+        // ⚠️ ===================================================================
+        // IDENTIFIANT DU CLIENT — DOIT correspondre à celui du dashboard
+        // =====================================================================
+        const CLIENT_ID = "rylia-burger";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBpdJ0zmbq6dO5m-LOyiYkApZLeH4nCx9A",
+            authDomain: "carte-digitale-df6c6.firebaseapp.com",
+            projectId: "carte-digitale-df6c6",
+            storageBucket: "carte-digitale-df6c6.firebasestorage.app",
+            messagingSenderId: "890638534522",
+            appId: "1:890638534522:web:1a5720c66107f37a1538c3"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Palette des couleurs (DOIT correspondre à celle du dashboard)
+        const TAG_COLORS = [
+            { name: "orange",  bg: "#FFF4E5", fg: "#FF8C00" },
+            { name: "red",     bg: "#FEF2F2", fg: "#DC2626" },
+            { name: "green",   bg: "#ECFDF5", fg: "#059669" },
+            { name: "blue",    bg: "#EFF6FF", fg: "#2563EB" },
+            { name: "purple",  bg: "#FAF5FF", fg: "#9333EA" },
+            { name: "pink",    bg: "#FDF2F8", fg: "#DB2777" },
+            { name: "yellow",  bg: "#FEFCE8", fg: "#CA8A04" },
+            { name: "brown",   bg: "#F5F1ED", fg: "#78350F" },
+            { name: "gray",    bg: "#F3F4F6", fg: "#4B5563" }
+        ];
+
+        // --- ÉTAT ---
+        let currentEnvies = [];
+        let currentAllergies = [];
+        let currentCategory = null;
+        let categories = [];
+        let products = [];
+        let tags = [];
+        let allergens = [];
+        let restaurantInfo = null;
+
+        async function init() {
+            try {
+                const restaurantRef = db.collection("restaurants").doc(CLIENT_ID);
+                const docSnap = await restaurantRef.get();
+                if (!docSnap.exists) {
+                    showError();
+                    return;
+                }
+                restaurantInfo = docSnap.data();
+                document.getElementById("restaurant-name").innerText = restaurantInfo.name || "Carte";
+                document.getElementById("restaurant-slogan").innerText = restaurantInfo.slogan || "";
+                document.title = (restaurantInfo.name || "Carte") + " — Carte digitale";
+
+                const [catSnap, prodSnap, tagSnap, aSnap] = await Promise.all([
+                    restaurantRef.collection("categories").orderBy("order", "asc").get(),
+                    restaurantRef.collection("products").get(),
+                    restaurantRef.collection("tags").orderBy("order", "asc").get(),
+                    restaurantRef.collection("allergens").orderBy("order", "asc").get()
+                ]);
+                categories = catSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                products = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                products.sort((a, b) => (a.order || 0) - (b.order || 0));
+                tags = tagSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                allergens = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                renderFilters();
+                renderCategoriesNav();
+                renderMenuSections();
+
+                document.getElementById("loading-state").classList.remove("show");
+                document.getElementById("main-content").style.display = "block";
+            } catch (err) {
+                console.error(err);
+                showError("Erreur de chargement. Réessayez plus tard.");
+            }
+        }
+
+        function showError(customMessage) {
+            document.getElementById("loading-state").classList.remove("show");
+            const err = document.getElementById("error-state");
+            err.classList.add("show");
+            if (customMessage) err.querySelector("p").innerText = customMessage;
+        }
+
+        function renderFilters() {
+            const enviesBox = document.getElementById("envies-container");
+            const enviesGroup = document.getElementById("envies-group");
+            if (tags.length === 0) {
+                enviesGroup.classList.add("empty");
+            } else {
+                enviesGroup.classList.remove("empty");
+                enviesBox.innerHTML = tags.map(t => {
+                    const emoji = t.emoji ? t.emoji + " " : "";
+                    return `<button class="btn-envie" data-id="${t.id}" onclick="toggleEnvie('${t.id}', this)">${emoji}${escapeHtml(t.label)}</button>`;
+                }).join("");
+            }
+
+            const allergiesBox = document.getElementById("allergies-container");
+            const allergiesGroup = document.getElementById("allergies-group");
+            if (allergens.length === 0) {
+                allergiesGroup.classList.add("empty");
+            } else {
+                allergiesGroup.classList.remove("empty");
+                allergiesBox.innerHTML = allergens.map(a =>
+                    `<button class="btn-allergy" data-id="${a.id}" onclick="toggleAllergie('${a.id}', this)">${escapeHtml(a.label)}</button>`
+                ).join("");
+            }
+        }
+
+        function renderCategoriesNav() {
+            const nav = document.getElementById("categories-nav");
+            if (categories.length === 0) {
+                nav.style.display = "none";
+                return;
+            }
+            currentCategory = categories[0].id;
+            nav.innerHTML = categories.map((c, i) =>
+                `<button class="cat-btn ${i === 0 ? "active" : ""}" data-cat="${c.id}" onclick="changeCategory('${c.id}', this)">${escapeHtml(c.name)}</button>`
+            ).join("");
+        }
+
+        function renderMenuSections() {
+            const container = document.getElementById("menu-sections");
+
+            if (categories.length === 0 || products.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:80px 20px; color: var(--text-grey);">
+                        <h3 style="margin-bottom:10px; font-size:1.2rem;">Carte en cours de préparation 👩‍🍳</h3>
+                        <p>Aucun produit n'est disponible pour le moment.</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = categories.map((cat, i) => {
+                const items = products.filter(p => p.categoryId === cat.id);
+                const dishesHtml = items.map(p => dishCardHtml(p)).join("");
+                return `
+                    <div id="cat-${cat.id}" class="menu-section ${i === 0 ? "active-section" : ""}">
+                        ${dishesHtml || `<div style="text-align:center; padding:60px 20px; color:var(--text-grey);"><p>Aucun produit dans cette catégorie.</p></div>`}
+                    </div>`;
+            }).join("");
+        }
+
+        function dishCardHtml(p) {
+            const tagsHtml = (p.tags || []).map(tid => {
+                const t = tags.find(x => x.id === tid);
+                if (!t) return "";
+                const c = TAG_COLORS.find(x => x.name === t.color) || TAG_COLORS[0];
+                const emoji = t.emoji ? t.emoji + " " : "";
+                return `<span class="tag" style="background:${c.bg}; color:${c.fg};">${emoji}${escapeHtml(t.label)}</span>`;
+            }).join("");
+
+            const allergenLabels = (p.allergens || []).map(aid => {
+                const a = allergens.find(x => x.id === aid);
+                return a ? a.label : null;
+            }).filter(Boolean);
+
+            const allergenText = allergenLabels.length > 0
+                ? `<div class="allergen-info">Contient: ${escapeHtml(allergenLabels.join(", "))}</div>`
+                : "";
+
+            const priceDisplay = (parseFloat(p.price) || 0).toFixed(2).replace(".", ",") + "€";
+
+            const dataEnvies = (p.tags || []).join(" ");
+            const dataAllergenes = (p.allergens || []).join(" ");
+
+            return `
+                <div class="dish-card" data-envies="${dataEnvies}" data-allergenes="${dataAllergenes}">
+                    ${p.imageUrl ? `<div class="dish-image"><img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.name || '')}" loading="lazy"></div>` : ''}
+                    <div class="dish-content">
+                        <div class="dish-header">
+                            <div class="dish-name">${escapeHtml(p.name || "")}</div>
+                            <div class="dish-price">${priceDisplay}</div>
+                        </div>
+                        ${p.description ? `<p class="dish-desc">${escapeHtml(p.description)}</p>` : ""}
+                        ${(tagsHtml || allergenText) ? `
+                            <div class="dish-footer">
+                                ${tagsHtml}
+                                ${allergenText}
+                            </div>` : ""}
+                    </div>
+                </div>`;
+        }
+
+        function changeCategory(catId, btn) {
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('.menu-section').forEach(sec => sec.classList.remove('active-section'));
+            document.getElementById('cat-' + catId).classList.add('active-section');
+            currentCategory = catId;
+            applyFilters();
+        }
+
+        function toggleEnvie(id, btn) {
+            btn.classList.toggle('active');
+            currentEnvies = currentEnvies.includes(id)
+                ? currentEnvies.filter(x => x !== id)
+                : [...currentEnvies, id];
+            applyFilters();
+        }
+
+        function toggleAllergie(id, btn) {
+            btn.classList.toggle('active');
+            currentAllergies = currentAllergies.includes(id)
+                ? currentAllergies.filter(x => x !== id)
+                : [...currentAllergies, id];
+            applyFilters();
+        }
+
+        function applyFilters() {
+            if (!currentCategory) return;
+            const activeContainer = document.getElementById('cat-' + currentCategory);
+            if (!activeContainer) return;
+
+            const dishes = activeContainer.querySelectorAll('.dish-card');
+            let visibleCount = 0;
+
+            dishes.forEach(dish => {
+                const platEnvies = (dish.dataset.envies || "").split(' ').filter(Boolean);
+                const platAllergenes = (dish.dataset.allergenes || "").split(' ').filter(Boolean);
+                let show = true;
+
+                if (currentEnvies.length > 0) {
+                    if (!currentEnvies.every(e => platEnvies.includes(e))) show = false;
+                }
+                if (currentAllergies.length > 0) {
+                    if (currentAllergies.some(a => platAllergenes.includes(a))) show = false;
+                }
+
+                dish.style.display = show ? "flex" : "none";
+                if (show) visibleCount++;
+            });
+
+            const msg = document.getElementById('no-results-msg');
+            msg.classList.toggle('show', visibleCount === 0 && dishes.length > 0);
+        }
+
+        function resetFilters() {
+            currentEnvies = [];
+            currentAllergies = [];
+            document.querySelectorAll('.scroll-container button').forEach(b => b.classList.remove('active'));
+            applyFilters();
+        }
+
+        function escapeHtml(str) {
+            return String(str || "").replace(/[&<>"']/g, c => ({
+                "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+            }[c]));
+        }
+
+        function openLegalPage() {
+            const name = (restaurantInfo && restaurantInfo.name) ? restaurantInfo.name : "[NOM DU RESTAURANT]";
+            const w = window.open("", "_blank");
+            w.document.write(`
+                <html><head><title>CGU & Mentions Légales</title>
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; padding: 50px; color: #2d2d2d; max-width: 750px; margin: auto; }
+                    h1 { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+                    h2 { font-size: 1.2rem; font-weight: 700; margin-top: 30px; }
+                    h3 { font-size: 1rem; font-weight: 700; color: #555; }
+                    p, li { font-size: 0.95rem; color: #444; }
+                    hr { border: 0; border-top: 1px solid #eee; margin: 40px 0; }
+                </style></head><body>
+                <h1>Mentions Légales & CGU</h1>
+                <section>
+                    <h2>I. ÉDITION</h2>
+                    <p><strong>Éditeur :</strong> Ce site est édité par l'établissement <strong>${escapeHtml(name)}</strong>. SIRET : [NUMÉRO].</p>
+                    <p><strong>Conception technique :</strong> Rylia | contact@rylia.fr</p>
+                </section>
+                <section>
+                    <h2>II. UTILISATION</h2>
+                    <h3>1. Objet</h3>
+                    <p>La présente carte digitale permet la consultation des produits et tarifs. Les informations sont données à titre indicatif.</p>
+                    <h3>2. Allergènes</h3>
+                    <p>Les informations sur les allergènes sont basées sur les fiches techniques de nos fournisseurs.</p>
+                </section>
+                <section>
+                    <h2>III. RGPD</h2>
+                    <p>Cette carte digitale est purement informative et ne collecte aucune donnée personnelle lors de sa consultation.</p>
+                </section>
+                <hr><p style="font-size: 0.8rem; color: #999;">Dernière mise à jour : ${new Date().toLocaleDateString('fr-FR')}</p>
+                </body></html>
+            `);
+        }
+
+        init();
+    </script>
+</body>
+</html>
