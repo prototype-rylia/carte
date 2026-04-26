@@ -57,10 +57,8 @@
 
     .topbar-logo {
       width: 34px; height: 34px;
-      background: var(--primary);
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      color: white; font-weight: 800; font-size: 16px;
+      object-fit: contain;
+      display: block;
     }
 
     .topbar-name { font-size: 16px; font-weight: 700; color: var(--dark); }
@@ -609,7 +607,7 @@
     @media (max-width: 768px) {
       .topbar { padding: 0 12px; height: 54px; }
       .topbar-name { font-size: 14px; }
-      .topbar-logo { width: 30px; height: 30px; border-radius: 8px; font-size: 14px; }
+      .topbar-logo { width: 30px; height: 30px; }
       .page { padding: 16px 12px; }
       .page-title { font-size: 18px; }
       .page-subtitle { font-size: 12px; }
@@ -695,7 +693,7 @@
 <!-- Topbar -->
 <header class="topbar">
   <div class="topbar-brand">
-    <div class="topbar-logo">R</div>
+    <img src="logo-rylia-transparent.png" class="topbar-logo" alt="Rylia">
     <span class="topbar-name">Rylia</span>
   </div>
   <div class="topbar-right">
