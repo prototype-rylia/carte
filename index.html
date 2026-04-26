@@ -281,6 +281,100 @@
             cursor: pointer;
             font-family: inherit;
         }
+
+        /* ======================================================== */
+        /* DESKTOP / TABLETTE — à partir de 768px                   */
+        /* ======================================================== */
+        @media (min-width: 768px) {
+
+            body { padding-bottom: 40px; }
+
+            /* Header plus spacieux */
+            header {
+                padding: 22px 20px;
+                box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+            }
+            .restaurant-name { font-size: 2rem; }
+            .restaurant-slogan { font-size: 1rem; }
+
+            /* Conteneur centré, largeur max confortable */
+            #main-content {
+                max-width: 1100px;
+                margin: 0 auto;
+            }
+
+            /* Filtres : centrés et passants à la ligne plutôt que scrollables */
+            .filters-wrapper { padding: 28px 0 14px 0; }
+            .filter-title { font-size: 0.85rem; margin-bottom: 14px; }
+            .scroll-container {
+                justify-content: center;
+                flex-wrap: wrap;
+                padding: 0 30px 5px 30px;
+            }
+            .btn-envie { padding: 11px 20px; font-size: 0.95rem; }
+            .btn-allergy { padding: 9px 18px; font-size: 0.9rem; }
+
+            /* Navigation des catégories : centrée */
+            .categories-nav {
+                justify-content: center;
+                margin-top: 20px;
+                border-radius: 0 0 18px 18px;
+            }
+            .cat-btn { padding: 20px 28px; font-size: 1.05rem; }
+
+            /* Plats en grille 2 colonnes */
+            .menu-section { padding: 35px 20px 0 20px; }
+            .menu-section.active-section {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 24px;
+                align-items: start;
+            }
+
+            /* Cartes de plats */
+            .dish-card {
+                margin-bottom: 0; /* gap remplace les marges */
+                transition: transform 0.25s ease, box-shadow 0.25s ease;
+            }
+
+            /* Image plus grande pour mettre les photos en valeur */
+            .dish-image { height: 240px; }
+
+            .dish-content { padding: 22px 24px; }
+            .dish-name { font-size: 1.3rem; }
+            .dish-price { font-size: 1.3rem; }
+            .dish-desc { font-size: 1rem; }
+
+            /* Empty state d'une catégorie : occupe toute la largeur */
+            .menu-section > div[style*="text-align:center"] {
+                grid-column: 1 / -1;
+            }
+
+            /* Footer */
+            .footer-legal { padding: 50px 20px 30px; }
+        }
+
+        /* Effet de survol uniquement avec une vraie souris (pas tablette) */
+        @media (min-width: 768px) and (hover: hover) {
+            .dish-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 14px 35px rgba(0,0,0,0.1);
+            }
+            .dish-card:hover .dish-image img {
+                transform: scale(1.04);
+            }
+            .dish-image img {
+                transition: transform 0.4s ease;
+            }
+        }
+
+        /* ======================================================== */
+        /* GRAND ÉCRAN — au-dessus de 1300px : un peu plus généreux */
+        /* ======================================================== */
+        @media (min-width: 1300px) {
+            #main-content { max-width: 1200px; }
+            .dish-image { height: 260px; }
+        }
     </style>
 </head>
 <body>
