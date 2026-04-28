@@ -174,18 +174,18 @@
         }
         .menu-section.active-section { display: block; }
 
-        .dish-card {
-            background: var(--white);
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            transition: transform 0.2s;
-        }
+        .dish-card { background: var(--white); border-radius: 20px; overflow: hidden; margin-bottom: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; position: relative; transition: transform 0.2s, box-shadow 0.3s; }
         .dish-card:active { transform: scale(0.98); }
+
+        /* Flash visuel quand on arrive depuis la section "À la une" */
+        @keyframes dishFlash {
+            0%   { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.45); }
+            50%  { box-shadow: 0 0 0 8px rgba(255, 107, 0, 0.18); }
+            100% { box-shadow: var(--shadow); }
+        }
+        .dish-card.dish-flash {
+            animation: dishFlash 1.4s ease;
+        }
 
         .dish-image {
             width: 100%;
@@ -209,7 +209,18 @@
             margin-bottom: 8px;
             gap: 12px;
         }
-        .dish-name { font-size: 1.2rem; font-weight: 700; line-height: 1.2; flex: 1; }
+        /* Bloc titre + badges sous le nom */
+        .dish-title-block {
+            flex: 1;
+            min-width: 0;
+        }
+        .dish-name { font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
+        .dish-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 7px;
+        }
         .dish-price { font-weight: 800; color: var(--primary-orange); font-size: 1.2rem; white-space: nowrap; }
         .dish-desc { font-size: 0.95rem; color: var(--text-grey); margin-bottom: 5px; line-height: 1.5; }
 
@@ -226,6 +237,174 @@
         .tag {
             font-size: 0.75rem; padding: 5px 10px; border-radius: 8px;
             font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        /* ===== BADGES (Best Seller, Populaire, …) — affichés au niveau du titre ===== */
+        .badge {
+            font-size: 0.68rem;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            white-space: nowrap;
+            line-height: 1.3;
+        }
+
+        /* ===== RUBAN SPOTLIGHT (sur la photo du plat) ===== */
+        .spotlight-ribbon {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            padding: 5px 12px 5px 10px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 2;
+        }
+        .spotlight-ribbon.day   { background: linear-gradient(135deg,#FF8C00,#FF6B00); }
+        .spotlight-ribbon.week  { background: linear-gradient(135deg,#3B82F6,#1D4ED8); }
+        .spotlight-ribbon.month { background: linear-gradient(135deg,#9333EA,#6B21A8); }
+
+        /* Pour les plats sans image, le ruban s'affiche en bandeau dans le contenu */
+        .dish-card.no-image .spotlight-ribbon {
+            position: static;
+            display: inline-flex;
+            margin-bottom: 10px;
+        }
+
+        /* ===== SECTION "À LA UNE" (en haut de la carte) ===== */
+        .spotlight-section {
+            background: linear-gradient(135deg, #fff8f4, #ffefe0);
+            padding: 22px 0 18px 0;
+            border-bottom: 1px solid #f0e3d5;
+        }
+        .spotlight-section.empty { display: none; }
+
+        .spotlight-section-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary-orange);
+            text-align: center;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .spotlight-section-title::before,
+        .spotlight-section-title::after {
+            content: "";
+            width: 28px;
+            height: 1.5px;
+            background: var(--primary-orange);
+            opacity: 0.4;
+        }
+
+        .spotlight-cards {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 0 20px 6px 20px;
+            scrollbar-width: none;
+            scroll-snap-type: x mandatory;
+        }
+        .spotlight-cards::-webkit-scrollbar { display: none; }
+
+        .spotlight-card {
+            flex-shrink: 0;
+            width: 220px;
+            background: var(--white);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            scroll-snap-align: start;
+            border: none;
+            text-align: left;
+            font-family: inherit;
+            padding: 0;
+            display: block;
+        }
+        .spotlight-card:active { transform: scale(0.97); }
+
+        .spotlight-card-image {
+            width: 100%;
+            height: 110px;
+            background: var(--bg-light);
+            position: relative;
+            overflow: hidden;
+        }
+        .spotlight-card-image img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+        .spotlight-card-image.no-img {
+            background: linear-gradient(135deg, #ffefe0, #ffe0c2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+        }
+        .spotlight-card-tag {
+            position: absolute;
+            top: 8px; left: 8px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: white;
+            padding: 3px 9px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .spotlight-card-tag.day   { background: linear-gradient(135deg,#FF8C00,#FF6B00); }
+        .spotlight-card-tag.week  { background: linear-gradient(135deg,#3B82F6,#1D4ED8); }
+        .spotlight-card-tag.month { background: linear-gradient(135deg,#9333EA,#6B21A8); }
+
+        .spotlight-card-body { padding: 10px 12px 12px; }
+        .spotlight-card-name {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            line-height: 1.25;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .spotlight-card-price {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--primary-orange);
+        }
+
+        /* Animation pulse du ruban (subtile pour ne pas saouler) */
+        @keyframes spotlightPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+        .spotlight-ribbon, .spotlight-card-tag {
+            animation: spotlightPulse 2.5s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .spotlight-ribbon, .spotlight-card-tag { animation: none; }
         }
 
         .allergen-info {
@@ -352,6 +531,18 @@
 
             /* Footer */
             .footer-legal { padding: 50px 20px 30px; }
+
+            /* Section À la une : cartes plus grandes et centrées */
+            .spotlight-section { padding: 32px 0 24px 0; }
+            .spotlight-section-title { font-size: 0.95rem; margin-bottom: 18px; }
+            .spotlight-cards {
+                justify-content: center;
+                padding: 0 30px 8px 30px;
+            }
+            .spotlight-card { width: 260px; }
+            .spotlight-card-image { height: 140px; }
+            .spotlight-card-name { font-size: 1rem; }
+            .spotlight-card-price { font-size: 1.05rem; }
         }
 
         /* Effet de survol uniquement avec une vraie souris (pas tablette) */
@@ -408,6 +599,12 @@
             </div>
         </div>
 
+        <!-- Section "À la une" : titre dynamique selon le type (Plat du jour / semaine / mois) -->
+        <section class="spotlight-section empty" id="spotlight-section">
+            <div class="spotlight-section-title" id="spotlight-section-title">Plat du jour</div>
+            <div class="spotlight-cards" id="spotlight-cards"></div>
+        </section>
+
         <div class="categories-nav" id="categories-nav"></div>
 
         <div id="menu-sections"></div>
@@ -453,15 +650,58 @@
             { name: "gray",    bg: "#F3F4F6", fg: "#4B5563" }
         ];
 
+        // Types de spotlight (DOIT correspondre au dashboard)
+        const SPOTLIGHT_TYPES = {
+            day:   { label: "Plat du jour",       emoji: "🌟" },
+            week:  { label: "Plat de la semaine", emoji: "🗓️" },
+            month: { label: "Plat du mois",       emoji: "🏆" }
+        };
+
         // --- ÉTAT ---
         let currentEnvies = [];
         let currentAllergies = [];
         let currentCategory = null;
         let categories = [];
         let products = [];
-        let tags = [];
+        let tags = [];          // tags d'envies (kind="envies" ou absent)
+        let highlights = [];    // badges (kind="highlight")
         let allergens = [];
         let restaurantInfo = null;
+
+        // ========================================================================
+        // HELPERS — SPOTLIGHT
+        // ========================================================================
+        function tsToMillis(v) {
+            if (!v) return 0;
+            if (typeof v === "number") return v;
+            if (v instanceof Date) return v.getTime();
+            if (typeof v.toMillis === "function") return v.toMillis();
+            if (v.seconds) return v.seconds * 1000;
+            return 0;
+        }
+
+        // Cherche dans restaurantInfo.spotlights si le produit donné est dans un des 3 slots
+        // (day / week / month). Retourne null si :
+        //  - le produit n'est dans aucun slot
+        //  - le slot est expiré (endsAt < now)
+        //  - le slot n'a pas encore commencé (startsAt > now)
+        function getActiveSpotlight(p) {
+            if (!p || !restaurantInfo || !restaurantInfo.spotlights) return null;
+            const slots = restaurantInfo.spotlights;
+            const now = Date.now();
+            for (const type of ["day", "week", "month"]) {
+                const slot = slots[type];
+                if (!slot || slot.productId !== p.id) continue;
+                const def = SPOTLIGHT_TYPES[type];
+                if (!def) continue;
+                const startsAt = tsToMillis(slot.startsAt);
+                const endsAt   = tsToMillis(slot.endsAt);
+                if (endsAt > 0 && endsAt < now) return null;     // expiré
+                if (startsAt > 0 && startsAt > now) return null; // futur
+                return { type, label: def.label, emoji: def.emoji };
+            }
+            return null;
+        }
 
         async function init() {
             try {
@@ -472,6 +712,8 @@
                     return;
                 }
                 restaurantInfo = docSnap.data();
+                // Rétrocompat : garantir que restaurantInfo.spotlights existe en tant qu'objet
+                if (!restaurantInfo.spotlights) restaurantInfo.spotlights = {};
                 document.getElementById("restaurant-name").innerText = restaurantInfo.name || "Carte";
                 document.getElementById("restaurant-slogan").innerText = restaurantInfo.slogan || "";
                 document.title = (restaurantInfo.name || "Carte") + " — Carte digitale";
@@ -485,10 +727,17 @@
                 categories = catSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 products = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
                 products.sort((a, b) => (a.order || 0) - (b.order || 0));
-                tags = tagSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                // Tags & Badges sont stockés dans la même collection « tags » avec un champ `kind`
+                // Rétrocompat : un tag sans `kind` est traité comme tag d'envies
+                const allTags = tagSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                tags       = allTags.filter(t => (t.kind || "envies") === "envies");
+                highlights = allTags.filter(t => t.kind === "highlight");
+
                 allergens = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
                 renderFilters();
+                renderSpotlightSection();
                 renderCategoriesNav();
                 renderMenuSections();
 
@@ -532,6 +781,75 @@
             }
         }
 
+        // ========================================================================
+        // SECTION « À LA UNE »
+        // Affiche en haut de la carte les plats avec un spotlight actif (jour/semaine/mois).
+        // Cliquer sur une carte fait défiler jusqu'au plat correspondant dans sa catégorie.
+        // ========================================================================
+        function renderSpotlightSection() {
+            const section = document.getElementById("spotlight-section");
+            const cardsBox = document.getElementById("spotlight-cards");
+            const titleEl = document.getElementById("spotlight-section-title");
+
+            // On rassemble tous les produits avec un spotlight actif (en respectant l'ordre des catégories,
+            // puis l'ordre interne des produits). En pratique il y en aura au plus 1 dans le nouveau modèle.
+            const featured = [];
+            categories.forEach(cat => {
+                products
+                    .filter(p => p.categoryId === cat.id)
+                    .forEach(p => {
+                        const sp = getActiveSpotlight(p);
+                        if (sp) featured.push({ product: p, spotlight: sp });
+                    });
+            });
+
+            if (featured.length === 0) {
+                section.classList.add("empty");
+                cardsBox.innerHTML = "";
+                return;
+            }
+            section.classList.remove("empty");
+
+            // Titre dynamique : reprend le label du type du premier (et normalement seul) plat à l'honneur.
+            // Si plusieurs (anciens comptes), on retombe sur le générique "À la une".
+            if (featured.length === 1) {
+                const sp = featured[0].spotlight;
+                titleEl.innerText = `${sp.emoji} ${sp.label}`;
+            } else {
+                titleEl.innerText = "À la une";
+            }
+
+            cardsBox.innerHTML = featured.map(({ product: p, spotlight: sp }) => {
+                const priceDisplay = (parseFloat(p.price) || 0).toFixed(2).replace(".", ",") + "€";
+                const imgHtml = p.imageUrl
+                    ? `<div class="spotlight-card-image"><img src="${escapeHtml(p.imageUrl)}" alt="" loading="lazy"><span class="spotlight-card-tag ${sp.type}">${sp.emoji} ${escapeHtml(sp.label)}</span></div>`
+                    : `<div class="spotlight-card-image no-img">${sp.emoji}<span class="spotlight-card-tag ${sp.type}">${escapeHtml(sp.label)}</span></div>`;
+                return `
+                    <button type="button" class="spotlight-card" onclick="goToProduct('${escapeAttr(p.categoryId)}', '${escapeAttr(p.id)}')">
+                        ${imgHtml}
+                        <div class="spotlight-card-body">
+                            <div class="spotlight-card-name">${escapeHtml(p.name || "")}</div>
+                            <div class="spotlight-card-price">${priceDisplay}</div>
+                        </div>
+                    </button>`;
+            }).join("");
+        }
+
+        // Navigue vers un produit : ouvre sa catégorie puis fait défiler
+        function goToProduct(categoryId, productId) {
+            const catBtn = document.querySelector(`.cat-btn[data-cat="${categoryId}"]`);
+            if (catBtn) catBtn.click();
+            // On laisse le temps à la catégorie de devenir visible
+            setTimeout(() => {
+                const card = document.querySelector(`.dish-card[data-product-id="${productId}"]`);
+                if (card) {
+                    card.scrollIntoView({ behavior: "smooth", block: "center" });
+                    card.classList.add("dish-flash");
+                    setTimeout(() => card.classList.remove("dish-flash"), 1600);
+                }
+            }, 80);
+        }
+
         function renderCategoriesNav() {
             const nav = document.getElementById("categories-nav");
             if (categories.length === 0) {
@@ -567,6 +885,26 @@
         }
 
         function dishCardHtml(p) {
+            // 1) Spotlight actif (plat du jour/semaine/mois)
+            const sp = getActiveSpotlight(p);
+            const ribbonHtml = sp
+                ? `<span class="spotlight-ribbon ${sp.type}">${sp.emoji} ${escapeHtml(sp.label)}</span>`
+                : "";
+
+            // 2) Badges (Best Seller, Populaire, …) — affichés au niveau du titre, pas dans le footer
+            const badgesHtml = (p.badges || []).map(bid => {
+                const h = highlights.find(x => x.id === bid);
+                if (!h) return "";
+                const c = TAG_COLORS.find(x => x.name === h.color) || TAG_COLORS[0];
+                const emoji = h.emoji ? h.emoji + " " : "";
+                return `<span class="badge" style="background:${c.bg}; color:${c.fg};">${emoji}${escapeHtml(h.label)}</span>`;
+            }).join("");
+
+            const badgesBlock = badgesHtml
+                ? `<div class="dish-badges">${badgesHtml}</div>`
+                : "";
+
+            // 3) Tags d'envies (gardent leur place dans le footer)
             const tagsHtml = (p.tags || []).map(tid => {
                 const t = tags.find(x => x.id === tid);
                 if (!t) return "";
@@ -589,20 +927,30 @@
             const dataEnvies = (p.tags || []).join(" ");
             const dataAllergenes = (p.allergens || []).join(" ");
 
+            // Si le plat n'a pas d'image, le ruban est intégré dans le contenu
+            const noImageClass = p.imageUrl ? "" : " no-image";
+            const ribbonInImage = p.imageUrl && ribbonHtml ? ribbonHtml : "";
+            const ribbonInContent = !p.imageUrl && ribbonHtml ? ribbonHtml : "";
+
+            // Le footer ne contient plus les badges (déplacés sous le titre)
+            const footerHtml = (tagsHtml || allergenText)
+                ? `<div class="dish-footer">${tagsHtml}${allergenText}</div>`
+                : "";
+
             return `
-                <div class="dish-card" data-envies="${dataEnvies}" data-allergenes="${dataAllergenes}">
-                    ${p.imageUrl ? `<div class="dish-image"><img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.name || '')}" loading="lazy"></div>` : ''}
+                <div class="dish-card${noImageClass}" data-product-id="${escapeAttr(p.id)}" data-envies="${dataEnvies}" data-allergenes="${dataAllergenes}">
+                    ${p.imageUrl ? `<div class="dish-image">${ribbonInImage}<img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.name || '')}" loading="lazy"></div>` : ''}
                     <div class="dish-content">
+                        ${ribbonInContent}
                         <div class="dish-header">
-                            <div class="dish-name">${escapeHtml(p.name || "")}</div>
+                            <div class="dish-title-block">
+                                <div class="dish-name">${escapeHtml(p.name || "")}</div>
+                                ${badgesBlock}
+                            </div>
                             <div class="dish-price">${priceDisplay}</div>
                         </div>
                         ${p.description ? `<p class="dish-desc">${escapeHtml(p.description)}</p>` : ""}
-                        ${(tagsHtml || allergenText) ? `
-                            <div class="dish-footer">
-                                ${tagsHtml}
-                                ${allergenText}
-                            </div>` : ""}
+                        ${footerHtml}
                     </div>
                 </div>`;
         }
@@ -670,6 +1018,15 @@
         function escapeHtml(str) {
             return String(str || "").replace(/[&<>"']/g, c => ({
                 "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+            }[c]));
+        }
+
+        // Échappe une valeur destinée à une chaîne JS dans un attribut onclick="…"
+        // (évite de casser le HTML si jamais un id contient une apostrophe ou un backslash)
+        function escapeAttr(str) {
+            return String(str || "").replace(/[\\'"&<>]/g, c => ({
+                "\\": "\\\\", "'": "\\'", '"': "&quot;",
+                "&": "&amp;", "<": "&lt;", ">": "&gt;"
             }[c]));
         }
 
