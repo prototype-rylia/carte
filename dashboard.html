@@ -479,6 +479,249 @@
     }
     .tag-pill.allergen { background: var(--danger-soft); color: var(--danger); }
 
+    /* ---- Highlight badge (best seller, populaire, …) — plus prononcé ---- */
+    .tag-pill.highlight {
+      font-weight: 700;
+      padding: 3px 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      letter-spacing: 0.2px;
+    }
+
+    /* ---- Spotlight ribbon (plat du jour / semaine / mois) — affichage liste produits ---- */
+    .spotlight-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      margin-right: 4px; margin-bottom: 3px;
+      letter-spacing: 0.2px;
+    }
+    .spotlight-badge.day   { background: linear-gradient(135deg,#FF8C00,#FF6B00); color: white; }
+    .spotlight-badge.week  { background: linear-gradient(135deg,#3B82F6,#1D4ED8); color: white; }
+    .spotlight-badge.month { background: linear-gradient(135deg,#9333EA,#6B21A8); color: white; }
+    .spotlight-badge.expired {
+      background: #F3F4F6; color: var(--gray);
+      text-decoration: line-through; font-weight: 600;
+    }
+
+    /* ===== ONGLET À L'HONNEUR : cartes spotlights ===== */
+    .spotlight-card-mgr {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Sélecteur de type (Jour / Semaine / Mois) */
+    .type-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 18px;
+      padding: 4px;
+      background: var(--gray-light);
+      border-radius: 12px;
+    }
+    .type-selector-btn {
+      border: none;
+      background: transparent;
+      padding: 10px 8px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.15s;
+      line-height: 1.2;
+    }
+    .type-selector-btn:hover { color: var(--dark); }
+    .type-selector-btn .ts-emoji { font-size: 18px; }
+    .type-selector-btn .ts-hint  { font-size: 10px; font-weight: 500; opacity: 0.85; }
+    .type-selector-btn.active {
+      background: white;
+      color: var(--type-color, var(--primary));
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .type-selector-btn.active .ts-hint { opacity: 1; font-weight: 600; }
+    .spotlight-card-mgr.has-product {
+      border-left: 4px solid var(--type-color, var(--primary));
+    }
+    .spotlight-card-mgr-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .spotlight-card-mgr-emoji {
+      width: 42px; height: 42px; flex-shrink: 0;
+      border-radius: 10px;
+      background: var(--type-bg, var(--primary-soft));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .spotlight-card-mgr-title {
+      font-size: 15px; font-weight: 700; color: var(--dark);
+    }
+    .spotlight-card-mgr-sub {
+      font-size: 12px; color: var(--gray); margin-top: 2px;
+    }
+    .spotlight-card-mgr-status {
+      margin-left: auto; flex-shrink: 0;
+      font-size: 11px; font-weight: 700;
+      padding: 4px 10px; border-radius: 999px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .spotlight-card-mgr-status.empty   { background: var(--gray-light); color: var(--gray); }
+    .spotlight-card-mgr-status.active  { background: var(--success-soft); color: var(--success); }
+    .spotlight-card-mgr-status.expired { background: var(--danger-soft); color: var(--danger); }
+
+    .spotlight-product-preview {
+      display: flex; gap: 14px; align-items: center;
+      padding: 12px;
+      background: var(--gray-light);
+      border-radius: 10px;
+      margin-bottom: 14px;
+    }
+    .spotlight-product-thumb {
+      width: 56px; height: 56px; flex-shrink: 0;
+      border-radius: 8px;
+      background: white;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      border: 1px solid var(--border);
+    }
+    .spotlight-product-thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .spotlight-product-info {
+      flex: 1; min-width: 0;
+    }
+    .spotlight-product-name {
+      font-size: 14px; font-weight: 700; color: var(--dark);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .spotlight-product-cat {
+      font-size: 12px; color: var(--gray); margin-top: 2px;
+    }
+    .spotlight-product-price {
+      font-size: 13px; font-weight: 700; color: var(--primary);
+      margin-top: 3px;
+    }
+
+    .spotlight-empty-state {
+      text-align: center;
+      padding: 22px 16px;
+      background: var(--gray-light);
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      margin-bottom: 14px;
+    }
+    .spotlight-empty-state p {
+      font-size: 13px; color: var(--gray); margin-bottom: 12px;
+    }
+
+    .spotlight-mgr-dates {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+      margin-bottom: 12px;
+    }
+    .spotlight-mgr-date-cell label {
+      display: block; font-size: 11px; font-weight: 600;
+      color: var(--gray); margin-bottom: 4px;
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .spotlight-mgr-date-cell .date-value {
+      padding: 9px 12px; background: white;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-weight: 600; color: var(--dark);
+    }
+    .spotlight-mgr-date-cell input[type="date"] {
+      width: 100%; padding: 9px 12px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-family: inherit; color: var(--dark);
+      background: white; outline: none;
+    }
+    .spotlight-mgr-date-cell input[type="date"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255,140,0,0.1);
+    }
+
+    .spotlight-mgr-actions {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .spotlight-mgr-actions .btn-pick {
+      flex: 1; min-width: 140px;
+      padding: 10px 16px;
+      background: var(--primary); color: white;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: all 0.15s;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .spotlight-mgr-actions .btn-pick:hover { background: #E67E00; }
+    .spotlight-mgr-actions .btn-change {
+      flex: 1; min-width: 140px;
+      padding: 10px 16px;
+      background: white; color: var(--dark);
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .spotlight-mgr-actions .btn-change:hover { border-color: var(--dark); }
+    .spotlight-mgr-actions .btn-remove {
+      padding: 10px 14px;
+      background: white; color: var(--danger);
+      border: 1.5px solid #FECACA; border-radius: 8px;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .spotlight-mgr-actions .btn-remove:hover { background: var(--danger-soft); }
+
+    /* ===== Product picker modal ===== */
+    .picker-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-bottom: 4px;
+    }
+    .picker-row:hover { background: var(--gray-light); }
+    .picker-row.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+    .picker-thumb {
+      width: 44px; height: 44px; flex-shrink: 0;
+      border-radius: 8px;
+      background: var(--gray-light);
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      border: 1px solid var(--border);
+    }
+    .picker-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .picker-info { flex: 1; min-width: 0; }
+    .picker-name {
+      font-size: 14px; font-weight: 600; color: var(--dark);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .picker-meta { font-size: 12px; color: var(--gray); margin-top: 2px; }
+    .picker-price {
+      font-size: 13px; font-weight: 700; color: var(--primary);
+      flex-shrink: 0;
+    }
+    .picker-empty {
+      text-align: center; padding: 30px 16px;
+      color: var(--gray); font-size: 13px;
+    }
+
     /* ---- Liste tags / allergènes (onglet taxonomy) ---- */
     .taxonomy-list { display: flex; flex-direction: column; gap: 8px; }
 
@@ -743,6 +986,7 @@
       <button class="tab-btn active" onclick="switchTab('products')">🍽️ Produits</button>
       <button class="tab-btn" onclick="switchTab('categories')">🗂️ Catégories</button>
       <button class="tab-btn" onclick="switchTab('taxonomy')">🏷️ Tags & Allergènes</button>
+      <button class="tab-btn" onclick="switchTab('spotlights')">🌟 Plat du jour</button>
       <button class="tab-btn" onclick="switchTab('settings')">⚙️ Paramètres</button>
     </div>
     <button class="tabs-arrow tabs-arrow-right" id="tabs-arrow-right" onclick="scrollTabs(1)">›</button>
@@ -811,6 +1055,22 @@
        ============================================ -->
   <div class="tab-content" id="tab-taxonomy">
 
+    <!-- Badges / Mises en avant -->
+    <div class="settings-card">
+      <h2 class="settings-title">
+        <span>🏅</span> Badges & mises en avant
+        <button class="btn-primary" style="margin-left:auto; padding:7px 14px; font-size:13px;" onclick="openTagModal('highlight')">
+          <span style="font-size:14px; line-height:1;">+</span> Ajouter
+        </button>
+      </h2>
+      <p style="font-size:13px; color:var(--gray); margin-bottom:16px;">
+        Badges visuels pour mettre en valeur certains produits sur la carte (ex: 🔥 Best Seller, ✨ Nouveau, 👑 Populaire).
+      </p>
+      <div id="highlights-container">
+        <div class="table-state" style="padding: 30px;"><p>Chargement…</p></div>
+      </div>
+    </div>
+
     <!-- Tags d'envies -->
     <div class="settings-card">
       <h2 class="settings-title">
@@ -841,6 +1101,20 @@
       <div id="allergens-container">
         <div class="table-state" style="padding: 30px;"><p>Chargement…</p></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       ONGLET PLAT DU JOUR (jour / semaine / mois — un seul à la fois)
+       ============================================ -->
+  <div class="tab-content" id="tab-spotlights">
+
+    <p style="font-size:14px; color:var(--gray); margin-bottom:18px; line-height:1.5;">
+      Mettez un produit à l'honneur sur votre carte publique. Choisissez la durée de la mise en avant : 1 jour, 1 semaine ou 1 mois.
+    </p>
+
+    <div id="spotlights-container">
+      <div class="table-state" style="padding: 30px;"><div class="loading-spinner"></div><p>Chargement…</p></div>
     </div>
   </div>
 
@@ -963,6 +1237,13 @@
         </div>
       </div>
 
+      <!-- ============= BADGES (Best Seller, Populaire, …) ============= -->
+      <div class="form-group" style="margin-top:16px;">
+        <label class="form-label">Badges</label>
+        <p class="form-hint" style="margin-top:0; margin-bottom:8px;">Étiquettes mettant en valeur ce produit (signaux marketing)</p>
+        <div class="chip-group" id="prod-badges"></div>
+      </div>
+
       <div class="form-group" style="margin-top:16px;">
         <label class="form-label">Tags (envies)</label>
         <p class="form-hint" style="margin-top:0; margin-bottom:8px;">Sélectionnez les catégories d'envie correspondantes</p>
@@ -1034,6 +1315,37 @@
 </div>
 
 <!-- ============================================
+     MODALE SÉLECTION DE PRODUIT (pour À l'honneur)
+     ============================================ -->
+<div class="modal-backdrop" id="product-picker-modal">
+  <div class="modal-box" style="max-width: 560px;">
+    <div class="modal-header">
+      <div class="modal-title" id="product-picker-title">Choisir un plat</div>
+      <button class="modal-close" onclick="closeProductPickerModal()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="padding-top: 16px;">
+
+      <div class="search-wrap" style="margin-bottom: 14px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" id="picker-search" placeholder="Rechercher un produit…" oninput="renderProductPickerList()">
+      </div>
+
+      <div id="picker-list" style="max-height: 50vh; overflow-y: auto; margin: 0 -8px;">
+        <!-- Liste générée par renderProductPickerList() -->
+      </div>
+
+      <div class="modal-feedback error" id="product-picker-feedback"></div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeProductPickerModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
      MODALE CONFIRMATION SUPPRESSION
      ============================================ -->
 <div class="modal-backdrop" id="confirm-modal">
@@ -1094,8 +1406,9 @@
     let currentUser = null;
     let restaurantData = null;         // { name, slogan, ownerUid, ... }
     let categories = [];               // [{id, name, order}]
-    let products = [];                 // [{id, name, desc, price, categoryId, tags, allergens}]
-    let tags = [];                     // [{id, label, emoji, color, order}]
+    let products = [];                 // [{id, name, desc, price, categoryId, tags, badges, spotlight, allergens}]
+    let tags = [];                     // [{id, label, emoji, color, order, kind:"envies"}] — tags d'envies
+    let highlights = [];               // [{id, label, emoji, color, order, kind:"highlight"}] — badges
     let allergens = [];                // [{id, label, order}]
     let editingCategoryId = null;
     let editingProductId = null;
@@ -1140,6 +1453,22 @@
         { label: "Lait" },
         { label: "Soja" }
     ];
+
+    // Badges (mises en avant) par défaut créés au premier chargement
+    const DEFAULT_HIGHLIGHTS = [
+        { label: "Best Seller",  emoji: "🔥", color: "red"    },
+        { label: "Populaire",    emoji: "👑", color: "yellow" },
+        { label: "Nouveau",      emoji: "✨", color: "blue"   },
+        { label: "Coup de cœur", emoji: "❤️", color: "pink"   }
+    ];
+
+    // Types de spotlight (plat du jour / semaine / mois)
+    const SPOTLIGHT_TYPES = {
+        none:  { label: "Aucune",            emoji: "—",   hint: "Pas de mise en avant", durationDays: 0  },
+        day:   { label: "Plat du jour",      emoji: "🌟",  hint: "Visible 24 h",          durationDays: 1  },
+        week:  { label: "Plat de la semaine", emoji: "🗓️",  hint: "Visible 7 jours",       durationDays: 7  },
+        month: { label: "Plat du mois",      emoji: "🏆",  hint: "Visible 30 jours",      durationDays: 30 }
+    };
 
     // ========================================================================
     // AUTH
@@ -1205,9 +1534,12 @@
             products = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
             products.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-            // Tags d'envies
+            // Tags d'envies + Badges (highlights) — stockés dans la même collection avec un champ `kind`
             const tagSnap = await restaurantRef.collection("tags").orderBy("order", "asc").get();
-            tags = tagSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const allTags = tagSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            // Rétrocompat : un tag sans `kind` est considéré comme "envies"
+            tags       = allTags.filter(t => (t.kind || "envies") === "envies");
+            highlights = allTags.filter(t => t.kind === "highlight");
 
             // Allergènes
             const aSnap = await restaurantRef.collection("allergens").orderBy("order", "asc").get();
@@ -1217,12 +1549,21 @@
             if (tags.length === 0 && allergens.length === 0) {
                 await seedDefaultTaxonomy();
             }
+            // Seed indépendant des highlights : si aucun highlight n'existe (anciens comptes),
+            // on crée la liste par défaut sans toucher aux tags/allergènes existants.
+            if (highlights.length === 0) {
+                await seedDefaultHighlights();
+            }
+
+            // Initialise l'objet spotlights s'il n'existe pas (rétrocompat anciens comptes)
+            if (!restaurantData.spotlights) restaurantData.spotlights = {};
 
             refreshKPIs();
             refreshCategoryFilter();
             renderCategories();
             renderProducts();
             renderTaxonomy();
+            renderSpotlights();
         } catch (err) {
             console.error(err);
             showToast("Erreur de chargement. Rechargez la page.", "error");
@@ -1233,7 +1574,8 @@
         const batch = db.batch();
         DEFAULT_TAGS.forEach((t, i) => {
             const ref = restaurantRef.collection("tags").doc();
-            const data = { ...t, order: i, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+            // kind:"envies" explicite pour clarté (rétrocompat: l'absence vaut "envies")
+            const data = { ...t, kind: "envies", order: i, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
             batch.set(ref, data);
             tags.push({ id: ref.id, ...data });
         });
@@ -1242,6 +1584,17 @@
             const data = { ...a, order: i, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
             batch.set(ref, data);
             allergens.push({ id: ref.id, ...data });
+        });
+        await batch.commit();
+    }
+
+    async function seedDefaultHighlights() {
+        const batch = db.batch();
+        DEFAULT_HIGHLIGHTS.forEach((h, i) => {
+            const ref = restaurantRef.collection("tags").doc();
+            const data = { ...h, kind: "highlight", order: i, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+            batch.set(ref, data);
+            highlights.push({ id: ref.id, ...data });
         });
         await batch.commit();
     }
@@ -1374,6 +1727,30 @@
         tbody.innerHTML = filtered.map(p => {
             const cat = categories.find(c => c.id === p.categoryId);
             const catName = cat ? cat.name : "—";
+
+            // 1) Ruban spotlight (plat du jour / semaine / mois)
+            const sp = getSpotlightState(p);
+            let spotlightHtml = "";
+            if (sp) {
+                const cls = sp.expired ? "expired" : sp.type;
+                const titleAttr = sp.expired
+                    ? `Expiré le ${formatShortDate(sp.endsAt)}`
+                    : (sp.notYetActive
+                        ? `Programmé à partir du ${formatShortDate(sp.startsAt)}`
+                        : `Actif jusqu'au ${formatShortDate(sp.endsAt)}`);
+                spotlightHtml = `<span class="spotlight-badge ${cls}" title="${escapeHtml(titleAttr)}">${sp.emoji} ${escapeHtml(sp.label)}${sp.expired ? " · expiré" : ""}</span>`;
+            }
+
+            // 2) Badges (highlights) — affichés en premier, plus prononcés
+            const badgesHtml = (p.badges || []).map(bid => {
+                const h = highlights.find(x => x.id === bid);
+                if (!h) return "";
+                const c = TAG_COLORS.find(c => c.name === h.color) || TAG_COLORS[0];
+                const emoji = h.emoji ? h.emoji + " " : "";
+                return `<span class="tag-pill highlight" style="background:${c.bg}; color:${c.fg};">${emoji}${escapeHtml(h.label)}</span>`;
+            }).join("");
+
+            // 3) Tags d'envies (existant)
             const tagsHtml = (p.tags || []).map(tid => {
                 const t = tags.find(x => x.id === tid);
                 if (!t) return "";
@@ -1386,6 +1763,9 @@
                 if (!a) return "";
                 return `<span class="tag-pill allergen">${escapeHtml(a.label)}</span>`;
             }).join("");
+
+            const allTagsHtml = spotlightHtml + badgesHtml + tagsHtml;
+
             const thumbHtml = p.imageUrl
                 ? `<div class="product-thumb"><img src="${escapeHtml(p.imageUrl)}" alt="" loading="lazy"></div>`
                 : `<div class="product-thumb">🍽️</div>`;
@@ -1401,7 +1781,7 @@
                         </div>
                     </td>
                     <td>${escapeHtml(catName)}</td>
-                    <td>${tagsHtml || '<span style="color:var(--gray); font-size:12px;">—</span>'}</td>
+                    <td>${allTagsHtml || '<span style="color:var(--gray); font-size:12px;">—</span>'}</td>
                     <td class="cell-price">${(parseFloat(p.price) || 0).toFixed(2)}€</td>
                     <td>
                         <div class="cell-actions">
@@ -1554,6 +1934,19 @@
                     .map(p => deleteStorageFile(p.imagePath))
             );
 
+            // Libérer les slots spotlight qui pointent vers un des produits supprimés
+            const slots = (restaurantData && restaurantData.spotlights) || {};
+            const deletedIds = new Set(relatedProducts.map(p => p.id));
+            const slotsToClear = ["day", "week", "month"].filter(t => slots[t] && deletedIds.has(slots[t].productId));
+            if (slotsToClear.length > 0) {
+                const updatePayload = {};
+                slotsToClear.forEach(t => {
+                    updatePayload[`spotlights.${t}`] = firebase.firestore.FieldValue.delete();
+                    delete restaurantData.spotlights[t];
+                });
+                await restaurantRef.update(updatePayload);
+            }
+
             products = products.filter(p => p.categoryId !== id);
             categories = categories.filter(c => c.id !== id);
             // Re-order remaining categories
@@ -1571,6 +1964,7 @@
             refreshCategoryFilter();
             renderCategories();
             renderProducts();
+            renderSpotlights();
             showToast("Catégorie supprimée", "success");
         } catch (err) {
             console.error(err);
@@ -1581,10 +1975,24 @@
     // ========================================================================
     // PRODUITS — CRUD
     // ========================================================================
+
     function buildProductChips() {
         const tagsBox = document.getElementById("prod-tags");
         const allergensBox = document.getElementById("prod-allergens");
+        const badgesBox = document.getElementById("prod-badges");
 
+        // Badges (highlights)
+        if (highlights.length === 0) {
+            badgesBox.innerHTML = `<p style="font-size:13px; color:var(--gray); font-style:italic;">Aucun badge défini. Créez-en dans l'onglet « Tags & Allergènes ».</p>`;
+        } else {
+            badgesBox.innerHTML = highlights.map(h => {
+                const c = TAG_COLORS.find(c => c.name === h.color) || TAG_COLORS[0];
+                const emoji = h.emoji ? h.emoji + " " : "";
+                return `<button type="button" class="chip" data-tag="${h.id}" data-bg="${c.bg}" data-fg="${c.fg}" onclick="toggleChip(this)">${emoji}${escapeHtml(h.label)}</button>`;
+            }).join("");
+        }
+
+        // Tags d'envies
         if (tags.length === 0) {
             tagsBox.innerHTML = `<p style="font-size:13px; color:var(--gray); font-style:italic;">Aucun tag défini. Créez-en dans l'onglet « Tags & Allergènes ».</p>`;
         } else {
@@ -1768,9 +2176,29 @@
                 imageState.currentPath = p.imagePath || null;
             }
 
+            // Tags d'envies
             (p.tags || []).forEach(t => {
                 const chip = document.querySelector(`#prod-tags .chip[data-tag="${t}"]`);
-                if (chip) chip.classList.add("active");
+                if (chip) {
+                    chip.classList.add("active");
+                    if (chip.dataset.bg) {
+                        chip.style.background = chip.dataset.bg;
+                        chip.style.color = chip.dataset.fg;
+                        chip.style.borderColor = chip.dataset.fg;
+                    }
+                }
+            });
+            // Badges (highlights)
+            (p.badges || []).forEach(b => {
+                const chip = document.querySelector(`#prod-badges .chip[data-tag="${b}"]`);
+                if (chip) {
+                    chip.classList.add("active");
+                    if (chip.dataset.bg) {
+                        chip.style.background = chip.dataset.bg;
+                        chip.style.color = chip.dataset.fg;
+                        chip.style.borderColor = chip.dataset.fg;
+                    }
+                }
             });
             (p.allergens || []).forEach(t => {
                 const chip = document.querySelector(`#prod-allergens .chip[data-tag="${t}"]`);
@@ -1824,6 +2252,7 @@
         const priceStr = document.getElementById("prod-price").value;
         const price = parseFloat(priceStr);
         const selectedTags = Array.from(document.querySelectorAll("#prod-tags .chip.active")).map(c => c.dataset.tag);
+        const selectedBadges = Array.from(document.querySelectorAll("#prod-badges .chip.active")).map(c => c.dataset.tag);
         const selectedAllergens = Array.from(document.querySelectorAll("#prod-allergens .chip.active")).map(c => c.dataset.tag);
 
         if (!name) {
@@ -1849,6 +2278,7 @@
             const data = {
                 name, description, categoryId, price,
                 tags: selectedTags,
+                badges: selectedBadges,
                 allergens: selectedAllergens,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
@@ -1917,6 +2347,9 @@
             showToast(editingProductId ? "Produit modifié" : "Produit créé", "success");
             refreshKPIs();
             renderProducts();
+            // Le produit a peut-être changé : on rafraîchit aussi les spotlights
+            // (au cas où c'est un produit qui est en spotlight et qui a été renommé/changé d'image)
+            renderSpotlights();
             closeProductModal();
         } catch (err) {
             console.error(err);
@@ -1945,6 +2378,20 @@
             }
             await restaurantRef.collection("products").doc(id).delete();
             products = products.filter(p => p.id !== id);
+
+            // Si ce produit était dans un slot spotlight, on libère le slot
+            const slots = (restaurantData && restaurantData.spotlights) || {};
+            const slotsToClear = ["day", "week", "month"].filter(t => slots[t] && slots[t].productId === id);
+            if (slotsToClear.length > 0) {
+                const updatePayload = {};
+                slotsToClear.forEach(t => {
+                    updatePayload[`spotlights.${t}`] = firebase.firestore.FieldValue.delete();
+                    delete restaurantData.spotlights[t];
+                });
+                await restaurantRef.update(updatePayload);
+                renderSpotlights();
+            }
+
             refreshKPIs();
             renderCategories(); // for the product count
             renderProducts();
@@ -1952,6 +2399,378 @@
         } catch (err) {
             console.error(err);
             showToast("Erreur lors de la suppression", "error");
+        }
+    }
+
+    // ========================================================================
+    // À L'HONNEUR — gestion du Plat du jour (un seul à la fois)
+    //
+    // Stockage : restaurantData.spotlights = { <type>: { productId, startsAt, endsAt } }
+    // où <type> est exactement un parmi "day" | "week" | "month".
+    // Le user choisit le type via le sélecteur dans l'UI, par défaut "day".
+    // ========================================================================
+
+    // Couleurs par type (cohérentes avec la carte publique)
+    const SPOTLIGHT_TYPE_STYLE = {
+        day:   { color: "#FF6B00", bg: "#FFF4E5" },
+        week:  { color: "#1D4ED8", bg: "#EFF6FF" },
+        month: { color: "#6B21A8", bg: "#FAF5FF" }
+    };
+
+    // Type actuellement affiché dans l'UI (peut différer du type stocké si le user change avant
+    // de sélectionner un produit). Initialisé/synchronisé dans renderSpotlights().
+    let currentSpotlightType = "day";
+
+    // Retourne le slot actuellement utilisé : { type, slot } ou null si rien n'est défini
+    function getCurrentSpotlightSlot() {
+        const slots = (restaurantData && restaurantData.spotlights) || {};
+        for (const type of ["day", "week", "month"]) {
+            if (slots[type] && slots[type].productId) {
+                return { type, slot: slots[type] };
+            }
+        }
+        return null;
+    }
+
+    function renderSpotlights() {
+        const box = document.getElementById("spotlights-container");
+        const current = getCurrentSpotlightSlot();
+
+        // Si un slot est rempli, on aligne le type affiché dessus.
+        // Sinon, on garde le type que l'user a choisi via le sélecteur (défaut: "day").
+        if (current) {
+            currentSpotlightType = current.type;
+        }
+        const type = currentSpotlightType;
+        const def = SPOTLIGHT_TYPES[type];
+        const style = SPOTLIGHT_TYPE_STYLE[type];
+
+        // Le produit affiché correspond au slot du type courant (s'il existe)
+        const slots = (restaurantData && restaurantData.spotlights) || {};
+        const slot = slots[type];
+        const product = slot ? products.find(p => p.id === slot.productId) : null;
+
+        // Statut (Actif / Programmé / Expiré / Aucun plat)
+        let statusLabel = "Aucun plat", statusClass = "empty";
+        if (product) {
+            const startsAt = tsToMillis(slot.startsAt);
+            const endsAt   = tsToMillis(slot.endsAt);
+            const now = Date.now();
+            if (endsAt > 0 && endsAt < now)     { statusLabel = "Expiré";    statusClass = "expired"; }
+            else if (startsAt > now)            { statusLabel = "Programmé"; statusClass = "empty"; }
+            else                                { statusLabel = "Actif";     statusClass = "active"; }
+        }
+
+        // ===== Sélecteur de type =====
+        const typeSelectorHtml = `
+            <div class="type-selector" style="--type-color:${style.color};">
+                ${["day","week","month"].map(t => {
+                    const tdef = SPOTLIGHT_TYPES[t];
+                    const tstyle = SPOTLIGHT_TYPE_STYLE[t];
+                    const sel = (t === type) ? "active" : "";
+                    return `
+                        <button type="button" class="type-selector-btn ${sel}"
+                                style="--type-color:${tstyle.color};"
+                                onclick="changeSpotlightType('${t}')">
+                            <span class="ts-emoji">${tdef.emoji}</span>
+                            <span>${escapeHtml(tdef.label)}</span>
+                            <span class="ts-hint">${escapeHtml(tdef.hint)}</span>
+                        </button>`;
+                }).join("")}
+            </div>`;
+
+        // ===== Contenu (preview produit OU état vide) =====
+        let bodyHtml;
+        if (product) {
+            const startsAt = tsToMillis(slot.startsAt);
+            const endsAt   = tsToMillis(slot.endsAt);
+            const cat = categories.find(c => c.id === product.categoryId);
+            const catName = cat ? cat.name : "—";
+            const priceFmt = (parseFloat(product.price) || 0).toFixed(2) + "€";
+            const thumbHtml = product.imageUrl
+                ? `<img src="${escapeHtml(product.imageUrl)}" alt="" loading="lazy">`
+                : `🍽️`;
+
+            bodyHtml = `
+                <div class="spotlight-product-preview">
+                    <div class="spotlight-product-thumb">${thumbHtml}</div>
+                    <div class="spotlight-product-info">
+                        <div class="spotlight-product-name">${escapeHtml(product.name || "")}</div>
+                        <div class="spotlight-product-cat">${escapeHtml(catName)}</div>
+                        <div class="spotlight-product-price">${priceFmt}</div>
+                    </div>
+                </div>
+
+                <div class="spotlight-mgr-dates">
+                    <div class="spotlight-mgr-date-cell">
+                        <label>Date de début</label>
+                        <input type="date"
+                               id="sp-start-${type}"
+                               value="${toDateInputValue(startsAt) || ""}"
+                               onchange="updateSpotlightDates('${type}')">
+                    </div>
+                    <div class="spotlight-mgr-date-cell">
+                        <label>Fin (auto)</label>
+                        <div class="date-value" id="sp-end-${type}">${formatShortDate(endsAt)}</div>
+                    </div>
+                </div>
+
+                <div class="spotlight-mgr-actions">
+                    <button class="btn-change" onclick="openProductPicker()">Changer de plat</button>
+                    <button class="btn-remove" onclick="removeSpotlight()">Retirer</button>
+                </div>`;
+        } else {
+            bodyHtml = `
+                <div class="spotlight-empty-state">
+                    <p>Aucun plat sélectionné. Choisissez la durée ci-dessus puis cliquez sur le bouton.</p>
+                </div>
+                <div class="spotlight-mgr-actions">
+                    <button class="btn-pick" onclick="openProductPicker()">
+                        <span style="font-size:14px; line-height:1;">+</span> Sélectionner un plat
+                    </button>
+                </div>`;
+        }
+
+        box.innerHTML = `
+            <div class="spotlight-card-mgr ${product ? "has-product" : ""}"
+                 style="--type-color:${style.color}; --type-bg:${style.bg};">
+
+                <div class="spotlight-card-mgr-header">
+                    <div class="spotlight-card-mgr-emoji">${def.emoji}</div>
+                    <div>
+                        <div class="spotlight-card-mgr-title">${escapeHtml(def.label)}</div>
+                        <div class="spotlight-card-mgr-sub">${escapeHtml(def.hint)}</div>
+                    </div>
+                    <span class="spotlight-card-mgr-status ${statusClass}">${statusLabel}</span>
+                </div>
+
+                ${typeSelectorHtml}
+
+                ${bodyHtml}
+            </div>`;
+    }
+
+    // L'utilisateur change le type (Jour / Semaine / Mois).
+    // Si un produit est déjà sélectionné, on déplace le slot vers le nouveau type
+    // et on recalcule la date de fin selon la nouvelle durée.
+    async function changeSpotlightType(newType) {
+        if (newType === currentSpotlightType) return;
+        if (!SPOTLIGHT_TYPES[newType]) return;
+
+        const oldType = currentSpotlightType;
+        const slots = (restaurantData && restaurantData.spotlights) || {};
+        const oldSlot = slots[oldType];
+
+        currentSpotlightType = newType;
+
+        // Cas 1 : aucun produit défini → simple changement d'UI, rien à persister
+        if (!oldSlot || !oldSlot.productId) {
+            renderSpotlights();
+            return;
+        }
+
+        // Cas 2 : un produit est en place → on le déplace vers le nouveau type
+        // (durée recalculée à partir de la même date de début)
+        const def = SPOTLIGHT_TYPES[newType];
+        const startsAtMs = tsToMillis(oldSlot.startsAt) || Date.now();
+        const endsAtMs   = startsAtMs + def.durationDays * 24 * 60 * 60 * 1000;
+
+        const newSlot = {
+            productId: oldSlot.productId,
+            startsAt:  firebase.firestore.Timestamp.fromMillis(startsAtMs),
+            endsAt:    firebase.firestore.Timestamp.fromMillis(endsAtMs)
+        };
+
+        try {
+            // Update atomique : on supprime l'ancien et on crée le nouveau en une fois
+            await restaurantRef.update({
+                [`spotlights.${oldType}`]: firebase.firestore.FieldValue.delete(),
+                [`spotlights.${newType}`]: newSlot
+            });
+            delete restaurantData.spotlights[oldType];
+            restaurantData.spotlights[newType] = newSlot;
+            renderSpotlights();
+            renderProducts();
+            showToast(`Durée changée : ${def.label}`, "success");
+        } catch (err) {
+            console.error(err);
+            // Rollback de l'UI en cas d'erreur
+            currentSpotlightType = oldType;
+            renderSpotlights();
+            showToast("Erreur lors du changement", "error");
+        }
+    }
+
+    // Recalcule la date de fin auto en fonction de la nouvelle date de début saisie,
+    // puis persiste sur Firestore (on ne change pas le produit, juste les dates).
+    async function updateSpotlightDates(type) {
+        // Le type est passé pour rester explicite mais doit normalement = currentSpotlightType
+        if (!restaurantData.spotlights || !restaurantData.spotlights[type]) return;
+        const def = SPOTLIGHT_TYPES[type];
+        if (!def) return;
+
+        const inputEl = document.getElementById(`sp-start-${type}`);
+        if (!inputEl || !inputEl.value) return;
+
+        const [y, m, d] = inputEl.value.split("-").map(Number);
+        const startsAtMs = new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+        const endsAtMs   = startsAtMs + def.durationDays * 24 * 60 * 60 * 1000;
+
+        // Mise à jour optimiste de l'état local
+        const newSlot = {
+            productId: restaurantData.spotlights[type].productId,
+            startsAt:  firebase.firestore.Timestamp.fromMillis(startsAtMs),
+            endsAt:    firebase.firestore.Timestamp.fromMillis(endsAtMs)
+        };
+        restaurantData.spotlights[type] = newSlot;
+
+        // Mise à jour partielle de Firestore (notation par chemin)
+        try {
+            await restaurantRef.update({ [`spotlights.${type}`]: newSlot });
+            renderSpotlights();
+            renderProducts();   // pour rafraîchir les rubans dans la table produits
+            showToast("Dates mises à jour", "success");
+        } catch (err) {
+            console.error(err);
+            showToast("Erreur lors de la mise à jour", "error");
+        }
+    }
+
+    // Retire le plat actuellement à l'honneur (quel que soit son type).
+    async function removeSpotlight() {
+        const current = getCurrentSpotlightSlot();
+        if (!current) return;
+        try {
+            await restaurantRef.update({
+                [`spotlights.${current.type}`]: firebase.firestore.FieldValue.delete()
+            });
+            delete restaurantData.spotlights[current.type];
+            renderSpotlights();
+            renderProducts();
+            showToast("Plat retiré", "success");
+        } catch (err) {
+            console.error(err);
+            showToast("Erreur lors de la suppression", "error");
+        }
+    }
+
+    // ========================================================================
+    // À L'HONNEUR — modale de sélection de produit
+    // ========================================================================
+    function openProductPicker() {
+        if (products.length === 0) {
+            showToast("Créez d'abord au moins un produit.", "error");
+            switchTab("products");
+            return;
+        }
+        const def = SPOTLIGHT_TYPES[currentSpotlightType];
+        document.getElementById("product-picker-title").innerText =
+            `${def.emoji} Choisir un plat — ${def.label}`;
+        document.getElementById("picker-search").value = "";
+        document.getElementById("product-picker-feedback").classList.remove("show");
+
+        renderProductPickerList();
+        document.getElementById("product-picker-modal").classList.add("show");
+        setTimeout(() => document.getElementById("picker-search").focus(), 100);
+    }
+
+    function closeProductPickerModal() {
+        document.getElementById("product-picker-modal").classList.remove("show");
+    }
+
+    function renderProductPickerList() {
+        const list = document.getElementById("picker-list");
+        const q = (document.getElementById("picker-search").value || "").trim().toLowerCase();
+
+        // Tri par catégorie (ordre des catégories) puis par ordre interne
+        const sorted = [...products].sort((a, b) => {
+            const catA = categories.findIndex(c => c.id === a.categoryId);
+            const catB = categories.findIndex(c => c.id === b.categoryId);
+            if (catA !== catB) return catA - catB;
+            return (a.order || 0) - (b.order || 0);
+        });
+
+        const filtered = q
+            ? sorted.filter(p =>
+                (p.name || "").toLowerCase().includes(q) ||
+                (p.description || "").toLowerCase().includes(q))
+            : sorted;
+
+        if (filtered.length === 0) {
+            list.innerHTML = `<div class="picker-empty">Aucun produit ne correspond.</div>`;
+            return;
+        }
+
+        list.innerHTML = filtered.map(p => {
+            const cat = categories.find(c => c.id === p.categoryId);
+            const catName = cat ? cat.name : "—";
+            const priceFmt = (parseFloat(p.price) || 0).toFixed(2) + "€";
+            const thumbHtml = p.imageUrl
+                ? `<img src="${escapeHtml(p.imageUrl)}" alt="" loading="lazy">`
+                : `🍽️`;
+            return `
+                <div class="picker-row" onclick="selectProductForSpotlight('${escapeAttrJs(p.id)}')">
+                    <div class="picker-thumb">${thumbHtml}</div>
+                    <div class="picker-info">
+                        <div class="picker-name">${escapeHtml(p.name || "")}</div>
+                        <div class="picker-meta">${escapeHtml(catName)}</div>
+                    </div>
+                    <div class="picker-price">${priceFmt}</div>
+                </div>`;
+        }).join("");
+    }
+
+    // Échappe une valeur destinée à une chaîne JS (entre apostrophes) dans un attribut onclick="…"
+    function escapeAttrJs(str) {
+        return String(str || "").replace(/[\\']/g, c => ({ "\\": "\\\\", "'": "\\'" }[c]));
+    }
+
+    async function selectProductForSpotlight(productId) {
+        const type = currentSpotlightType;
+        const def = SPOTLIGHT_TYPES[type];
+        if (!def) return;
+
+        const product = products.find(p => p.id === productId);
+        if (!product) {
+            const fb = document.getElementById("product-picker-feedback");
+            fb.innerText = "Produit introuvable.";
+            fb.classList.add("show");
+            return;
+        }
+
+        const startsAtMs = Date.now();
+        const endsAtMs   = startsAtMs + def.durationDays * 24 * 60 * 60 * 1000;
+        const newSlot = {
+            productId,
+            startsAt: firebase.firestore.Timestamp.fromMillis(startsAtMs),
+            endsAt:   firebase.firestore.Timestamp.fromMillis(endsAtMs)
+        };
+
+        // S'il y avait déjà un plat en place dans un autre slot (changement de type entre temps),
+        // on libère tous les anciens slots pour ne garder que celui qu'on remplit.
+        if (!restaurantData.spotlights) restaurantData.spotlights = {};
+        const slotsToFree = ["day","week","month"]
+            .filter(t => t !== type && restaurantData.spotlights[t]);
+
+        try {
+            const updatePayload = { [`spotlights.${type}`]: newSlot };
+            slotsToFree.forEach(t => {
+                updatePayload[`spotlights.${t}`] = firebase.firestore.FieldValue.delete();
+            });
+            await restaurantRef.update(updatePayload);
+
+            slotsToFree.forEach(t => delete restaurantData.spotlights[t]);
+            restaurantData.spotlights[type] = newSlot;
+
+            renderSpotlights();
+            renderProducts();
+            closeProductPickerModal();
+            showToast(`${def.emoji} ${def.label} — « ${product.name} » mis à l'honneur`, "success");
+        } catch (err) {
+            console.error(err);
+            const fb = document.getElementById("product-picker-feedback");
+            fb.innerText = "Erreur lors de la sauvegarde. Réessayez.";
+            fb.classList.add("show");
         }
     }
 
@@ -1999,7 +2818,31 @@
     // TAXONOMIE — TAGS & ALLERGÈNES
     // ========================================================================
     function renderTaxonomy() {
-        // Tags
+        // ===== Badges (highlights) =====
+        const hBox = document.getElementById("highlights-container");
+        if (highlights.length === 0) {
+            hBox.innerHTML = `<div class="tax-empty">Aucun badge pour l'instant. Cliquez sur « Ajouter ».</div>`;
+        } else {
+            hBox.innerHTML = `<div class="taxonomy-list">` + highlights.map((h, i) => {
+                const c = TAG_COLORS.find(x => x.name === h.color) || TAG_COLORS[0];
+                const usageCount = products.filter(p => (p.badges || []).includes(h.id)).length;
+                return `
+                    <div class="tax-row">
+                        <span class="tax-emoji">${escapeHtml(h.emoji || "")}</span>
+                        <span class="tax-pill-preview" style="background:${c.bg}; color:${c.fg};">${escapeHtml(h.label)}</span>
+                        <span class="tax-label" style="font-size:12px; color:var(--gray); flex:0 1 auto;">${usageCount} produit${usageCount > 1 ? "s" : ""}</span>
+                        <span style="flex:1;"></span>
+                        <div class="tax-actions">
+                            <button class="btn-move" onclick="moveTaxonomy('highlight', '${h.id}', -1)" ${i === 0 ? "disabled" : ""}>↑</button>
+                            <button class="btn-move" onclick="moveTaxonomy('highlight', '${h.id}', 1)" ${i === highlights.length - 1 ? "disabled" : ""}>↓</button>
+                            <button class="btn-icon" onclick="openTagModal('highlight', '${h.id}')" title="Modifier">✏️</button>
+                            <button class="btn-icon danger" onclick="confirmDeleteTaxonomy('highlight', '${h.id}')" title="Supprimer">🗑️</button>
+                        </div>
+                    </div>`;
+            }).join("") + `</div>`;
+        }
+
+        // ===== Tags d'envies =====
         const tagsBox = document.getElementById("tags-container");
         if (tags.length === 0) {
             tagsBox.innerHTML = `<div class="tax-empty">Aucun tag pour l'instant. Cliquez sur « Ajouter ».</div>`;
@@ -2023,7 +2866,7 @@
             }).join("") + `</div>`;
         }
 
-        // Allergènes
+        // ===== Allergènes =====
         const aBox = document.getElementById("allergens-container");
         if (allergens.length === 0) {
             aBox.innerHTML = `<div class="tax-empty">Aucun allergène pour l'instant. Cliquez sur « Ajouter ».</div>`;
@@ -2049,7 +2892,11 @@
     function openTagModal(kind, id = null) {
         editingTaxKind = kind;
         editingTaxId = id;
-        const isTag = kind === "tag";
+        const isTag       = kind === "tag";
+        const isHighlight = kind === "highlight";
+        const isAllergen  = kind === "allergen";
+        const hasColor    = isTag || isHighlight;  // tags & highlights ont une couleur
+        const hasEmoji    = isTag || isHighlight;  // tags & highlights ont un emoji
 
         const modal = document.getElementById("tag-modal");
         const title = document.getElementById("tag-modal-title");
@@ -2060,31 +2907,36 @@
         const colorGroup = document.getElementById("tag-color-group");
         document.getElementById("tag-modal-feedback").classList.remove("show");
 
-        // Allergènes : pas d'emoji ni de couleur (toujours rouge)
-        emojiGroup.style.display = isTag ? "block" : "none";
-        colorGroup.style.display = isTag ? "block" : "none";
+        emojiGroup.style.display = hasEmoji ? "block" : "none";
+        colorGroup.style.display = hasColor ? "block" : "none";
 
         let item = null;
         if (id) {
-            item = (isTag ? tags : allergens).find(x => x.id === id);
+            const list = isTag ? tags : (isHighlight ? highlights : allergens);
+            item = list.find(x => x.id === id);
         }
 
         if (item) {
-            title.innerText = isTag ? "Modifier le tag" : "Modifier l'allergène";
+            title.innerText = isTag ? "Modifier le tag"
+                            : isHighlight ? "Modifier le badge"
+                            : "Modifier l'allergène";
             confirmBtn.innerText = "Enregistrer";
             labelInput.value = item.label || "";
             emojiInput.value = item.emoji || "";
         } else {
-            title.innerText = isTag ? "Nouveau tag" : "Nouvel allergène";
+            title.innerText = isTag ? "Nouveau tag"
+                            : isHighlight ? "Nouveau badge"
+                            : "Nouvel allergène";
             confirmBtn.innerText = "Créer";
             labelInput.value = "";
             emojiInput.value = "";
         }
 
-        // Color picker
-        if (isTag) {
+        // Color picker (tags & highlights)
+        if (hasColor) {
             const picker = document.getElementById("tag-color-picker");
-            const selectedColor = item ? item.color : "orange";
+            const defaultColor = isHighlight ? "yellow" : "orange";
+            const selectedColor = item ? item.color : defaultColor;
             picker.innerHTML = TAG_COLORS.map(c => `
                 <div class="color-swatch ${c.name === selectedColor ? "selected" : ""}"
                      data-color="${c.name}"
@@ -2110,13 +2962,18 @@
 
     function updateTagPreview() {
         const preview = document.getElementById("tag-preview");
-        const isTag = editingTaxKind === "tag";
+        const isTag       = editingTaxKind === "tag";
+        const isHighlight = editingTaxKind === "highlight";
+        const hasColor    = isTag || isHighlight;
         const label = (document.getElementById("tag-label").value || "").trim() || "Aperçu";
 
-        if (isTag) {
+        // Reset des classes pour l'aperçu
+        preview.className = "tag-pill" + (isHighlight ? " highlight" : "");
+
+        if (hasColor) {
             const emoji = (document.getElementById("tag-emoji").value || "").trim();
             const selected = document.querySelector("#tag-color-picker .color-swatch.selected");
-            const colorName = selected ? selected.dataset.color : "orange";
+            const colorName = selected ? selected.dataset.color : (isHighlight ? "yellow" : "orange");
             const c = TAG_COLORS.find(x => x.name === colorName) || TAG_COLORS[0];
             preview.style.background = c.bg;
             preview.style.color = c.fg;
@@ -2139,7 +2996,10 @@
         const btn = document.getElementById("tag-modal-confirm");
         feedback.classList.remove("show");
 
-        const isTag = editingTaxKind === "tag";
+        const isTag       = editingTaxKind === "tag";
+        const isHighlight = editingTaxKind === "highlight";
+        const hasColor    = isTag || isHighlight;
+        const hasEmoji    = isTag || isHighlight;
         const label = document.getElementById("tag-label").value.trim();
 
         if (!label) {
@@ -2148,7 +3008,8 @@
             return;
         }
 
-        const list = isTag ? tags : allergens;
+        // La liste où chercher les doublons et où ajouter en mémoire
+        const list = isTag ? tags : (isHighlight ? highlights : allergens);
         if (list.some(x => x.label.toLowerCase() === label.toLowerCase() && x.id !== editingTaxId)) {
             feedback.innerText = "Ce libellé existe déjà.";
             feedback.classList.add("show");
@@ -2156,13 +3017,20 @@
         }
 
         const data = { label, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
-        if (isTag) {
+        if (hasEmoji) {
             data.emoji = document.getElementById("tag-emoji").value.trim();
-            const selected = document.querySelector("#tag-color-picker .color-swatch.selected");
-            data.color = selected ? selected.dataset.color : "orange";
         }
+        if (hasColor) {
+            const selected = document.querySelector("#tag-color-picker .color-swatch.selected");
+            data.color = selected ? selected.dataset.color : (isHighlight ? "yellow" : "orange");
+        }
+        // Marquer le `kind` pour les nouveaux items (rétrocompat : envies par défaut côté lecture)
+        if (isTag)       data.kind = "envies";
+        if (isHighlight) data.kind = "highlight";
 
-        const collection = isTag ? "tags" : "allergens";
+        // Tags d'envies & badges sont stockés dans la même collection "tags"
+        // Allergènes restent dans leur propre collection
+        const collection = isAllergenKind(editingTaxKind) ? "allergens" : "tags";
 
         btn.disabled = true;
         try {
@@ -2170,13 +3038,13 @@
                 await restaurantRef.collection(collection).doc(editingTaxId).update(data);
                 const idx = list.findIndex(x => x.id === editingTaxId);
                 if (idx >= 0) list[idx] = { ...list[idx], ...data };
-                showToast(isTag ? "Tag modifié" : "Allergène modifié", "success");
+                showToast(isTag ? "Tag modifié" : (isHighlight ? "Badge modifié" : "Allergène modifié"), "success");
             } else {
                 data.order = list.length;
                 data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
                 const ref = await restaurantRef.collection(collection).add(data);
                 list.push({ id: ref.id, ...data });
-                showToast(isTag ? "Tag créé" : "Allergène créé", "success");
+                showToast(isTag ? "Tag créé" : (isHighlight ? "Badge créé" : "Allergène créé"), "success");
             }
             renderTaxonomy();
             renderProducts();
@@ -2190,10 +3058,31 @@
         }
     }
 
+    function isAllergenKind(kind) { return kind === "allergen"; }
+
+    // Helpers de routage : tags d'envies & badges = collection "tags", allergènes = collection "allergens"
+    function _taxList(kind) {
+        if (kind === "tag")       return tags;
+        if (kind === "highlight") return highlights;
+        return allergens;
+    }
+    function _taxCollection(kind) {
+        return kind === "allergen" ? "allergens" : "tags";
+    }
+    function _taxProductField(kind) {
+        if (kind === "tag")       return "tags";
+        if (kind === "highlight") return "badges";
+        return "allergens";
+    }
+    function _setTaxList(kind, newList) {
+        if (kind === "tag")       tags = newList;
+        else if (kind === "highlight") highlights = newList;
+        else allergens = newList;
+    }
+
     async function moveTaxonomy(kind, id, direction) {
-        const isTag = kind === "tag";
-        const list = isTag ? tags : allergens;
-        const collection = isTag ? "tags" : "allergens";
+        const list = _taxList(kind);
+        const collection = _taxCollection(kind);
 
         const idx = list.findIndex(x => x.id === id);
         const target = idx + direction;
@@ -2216,51 +3105,55 @@
     }
 
     function confirmDeleteTaxonomy(kind, id) {
-        const isTag = kind === "tag";
-        const list = isTag ? tags : allergens;
+        const list = _taxList(kind);
         const item = list.find(x => x.id === id);
         if (!item) return;
 
-        const usageCount = products.filter(p =>
-            ((isTag ? p.tags : p.allergens) || []).includes(id)
-        ).length;
+        const productField = _taxProductField(kind);
+        const usageCount = products.filter(p => (p[productField] || []).includes(id)).length;
 
-        const noun = isTag ? "ce tag" : "cet allergène";
+        const noun = kind === "tag" ? "ce tag" : (kind === "highlight" ? "ce badge" : "cet allergène");
         const msg = usageCount > 0
             ? `${usageCount} produit${usageCount > 1 ? "s utilisent" : " utilise"} ${noun}. Il sera retiré de ${usageCount > 1 ? "ces produits" : "ce produit"}. Continuer ?`
             : `Supprimer définitivement « ${item.label} » ?`;
 
-        openConfirmModal(`Supprimer ${isTag ? "le tag" : "l'allergène"}`, msg, async () => {
+        const titlePrefix = kind === "tag" ? "Supprimer le tag"
+                          : kind === "highlight" ? "Supprimer le badge"
+                          : "Supprimer l'allergène";
+
+        openConfirmModal(titlePrefix, msg, async () => {
             await deleteTaxonomy(kind, id);
         });
     }
 
     async function deleteTaxonomy(kind, id) {
-        const isTag = kind === "tag";
-        const collection = isTag ? "tags" : "allergens";
-        const field = isTag ? "tags" : "allergens";
+        const collection   = _taxCollection(kind);
+        const productField = _taxProductField(kind);
 
         try {
             const batch = db.batch();
             // Retirer cet ID de tous les produits qui le référencent
             products.forEach(p => {
-                const arr = p[field] || [];
+                const arr = p[productField] || [];
                 if (arr.includes(id)) {
                     const newArr = arr.filter(x => x !== id);
-                    batch.update(restaurantRef.collection("products").doc(p.id), { [field]: newArr });
-                    p[field] = newArr;
+                    batch.update(restaurantRef.collection("products").doc(p.id), { [productField]: newArr });
+                    p[productField] = newArr;
                 }
             });
-            // Supprimer le tag/allergène
+            // Supprimer le tag/badge/allergène
             batch.delete(restaurantRef.collection(collection).doc(id));
             await batch.commit();
 
-            if (isTag) tags = tags.filter(x => x.id !== id);
-            else allergens = allergens.filter(x => x.id !== id);
+            // Mise à jour des listes en mémoire
+            _setTaxList(kind, _taxList(kind).filter(x => x.id !== id));
 
             renderTaxonomy();
             renderProducts();
-            showToast(isTag ? "Tag supprimé" : "Allergène supprimé", "success");
+            const label = kind === "tag" ? "Tag supprimé"
+                        : kind === "highlight" ? "Badge supprimé"
+                        : "Allergène supprimé";
+            showToast(label, "success");
         } catch (err) {
             console.error(err);
             showToast("Erreur lors de la suppression", "error");
@@ -2318,6 +3211,67 @@
     document.getElementById("tabs-nav").addEventListener("scroll", updateTabArrows);
     window.addEventListener("resize", updateTabArrows);
     setTimeout(updateTabArrows, 200);
+
+    // ========================================================================
+    // HELPERS — SPOTLIGHT (Plat du jour / semaine / mois)
+    // ========================================================================
+    // Convertit un Firestore Timestamp, Date ou number en millisecondes
+    function tsToMillis(v) {
+        if (!v) return 0;
+        if (typeof v === "number") return v;
+        if (v instanceof Date) return v.getTime();
+        if (typeof v.toMillis === "function") return v.toMillis();
+        if (v.seconds) return v.seconds * 1000;
+        return 0;
+    }
+
+    // Retourne l'état du spotlight d'un produit en cherchant dans restaurantData.spotlights.
+    // Retourne null si le produit n'est pas spotlight, ou si le spotlight est expiré/futur.
+    // -> { type, label, emoji, startsAt(ms), endsAt(ms), expired (bool), notYetActive (bool) }
+    function getSpotlightState(p) {
+        if (!p || !restaurantData || !restaurantData.spotlights) return null;
+        const slots = restaurantData.spotlights;
+        for (const type of ["day", "week", "month"]) {
+            const slot = slots[type];
+            if (slot && slot.productId === p.id) {
+                const def = SPOTLIGHT_TYPES[type];
+                if (!def) continue;
+                const startsAt = tsToMillis(slot.startsAt);
+                const endsAt   = tsToMillis(slot.endsAt);
+                const now = Date.now();
+                return {
+                    type,
+                    label: def.label,
+                    emoji: def.emoji,
+                    startsAt, endsAt,
+                    expired: endsAt > 0 && endsAt < now,
+                    notYetActive: startsAt > now
+                };
+            }
+        }
+        return null;
+    }
+
+    // Format court : "12 mars" (sans année si année courante)
+    function formatShortDate(ms) {
+        if (!ms) return "—";
+        const d = new Date(ms);
+        const now = new Date();
+        const sameYear = d.getFullYear() === now.getFullYear();
+        return d.toLocaleDateString("fr-FR", sameYear
+            ? { day: "2-digit", month: "short" }
+            : { day: "2-digit", month: "short", year: "numeric" });
+    }
+
+    // YYYY-MM-DD pour <input type="date">
+    function toDateInputValue(ms) {
+        if (!ms) return "";
+        const d = new Date(ms);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+    }
 
     // ========================================================================
     // HELPERS
