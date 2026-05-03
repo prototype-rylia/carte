@@ -8,7 +8,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1390,7 +1389,6 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    const functions = firebase.app().functions("europe-west1");
 
     // Référence fixe vers le document du restaurant courant
     const restaurantRef = db.collection("restaurants").doc(CLIENT_ID);
@@ -2132,11 +2130,45 @@
     //   2. Détermine le restaurant via ownerUid en Firestore
     //   3. Renvoie une signature cryptographique à usage unique
     // Puis le navigateur upload directement vers Cloudinary avec cette signature.
+    //
+    // NOTE : on appelle directement l'URL Gen 2 de la fonction au lieu de
+    // passer par firebase.functions().httpsCallable(), car le SDK compat v10
+    // appelle l'ancienne URL Gen 1 qui n'existe pas pour notre fonction.
+    // L'authentification se fait en envoyant le token Firebase Auth dans
+    // l'en-tête Authorization, exactement comme le ferait le SDK.
+    const SIGNED_UPLOAD_URL = "https://signedupload-x2rq3pj5da-ew.a.run.app";
+
     async function uploadProductImage(blob, productId) {
-        // 1) Demander une signature à la Cloud Function
-        const callSignedUpload = functions.httpsCallable("signedUpload");
-        const result = await callSignedUpload({ productId });
-        const { signature, timestamp, api_key, cloud_name, folder } = result.data;
+        // 0) Récupérer le token d'authentification Firebase de l'utilisateur courant
+        const user = auth.currentUser;
+        if (!user) throw new Error("Utilisateur non connecté.");
+        const idToken = await user.getIdToken();
+
+        // 1) Demander une signature à la Cloud Function (format "callable")
+        const callRes = await fetch(SIGNED_UPLOAD_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + idToken,
+            },
+            // Format attendu par onCall : { data: { ...payload } }
+            body: JSON.stringify({ data: { productId } }),
+        });
+
+        if (!callRes.ok) {
+            const e = await callRes.json().catch(() => ({}));
+            const msg = e?.error?.message || `Erreur signature (${callRes.status})`;
+            throw new Error(msg);
+        }
+
+        const callBody = await callRes.json();
+        // Format renvoyé par onCall : { result: { ...returnedValue } }
+        const sig = callBody.result || {};
+        const { signature, timestamp, api_key, cloud_name, folder } = sig;
+
+        if (!signature || !cloud_name) {
+            throw new Error("Réponse signature invalide.");
+        }
 
         // 2) Construire le formulaire pour Cloudinary
         const formData = new FormData();
