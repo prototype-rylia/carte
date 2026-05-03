@@ -8,7 +8,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-functions-compat.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1390,7 +1390,7 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    const storage = firebase.storage();
+    const functions = firebase.app().functions("europe-west1");
 
     // Référence fixe vers le document du restaurant courant
     const restaurantRef = db.collection("restaurants").doc(CLIENT_ID);
@@ -1767,7 +1767,7 @@
             const allTagsHtml = spotlightHtml + badgesHtml + tagsHtml;
 
             const thumbHtml = p.imageUrl
-                ? `<div class="product-thumb"><img src="${escapeHtml(p.imageUrl)}" alt="" loading="lazy"></div>`
+                ? `<div class="product-thumb"><img src="${escapeHtml(cldImageUrl(p.imageUrl, 200))}" alt="" loading="lazy"></div>`
                 : `<div class="product-thumb">🍽️</div>`;
             return `
                 <tr>
@@ -2030,9 +2030,10 @@
 
         if (imageSrc) {
             box.classList.add("has-image");
+            // cldImageUrl optimise les URLs Cloudinary, et laisse passer les data URLs base64 inchangées
             box.innerHTML = `
                 <div class="image-preview-wrap">
-                    <img src="${escapeHtml(imageSrc)}" alt="Aperçu">
+                    <img src="${escapeHtml(cldImageUrl(imageSrc, 600))}" alt="Aperçu">
                     <div class="image-preview-actions">
                         <button type="button" class="image-action-btn" onclick="document.getElementById('image-input').click()">Changer</button>
                         <button type="button" class="image-action-btn danger" onclick="removeProductImage()">×</button>
@@ -2122,24 +2123,54 @@
         });
     }
 
-    // Upload une image vers Storage et retourne {url, path}
+    // ============================================================
+    // CLOUDINARY — Upload sécurisé via Cloud Function signedUpload
+    // ============================================================
+    // Le navigateur ne connaît PAS l'API Secret Cloudinary.
+    // Il appelle d'abord la Cloud Function signedUpload qui :
+    //   1. Vérifie que l'utilisateur est authentifié (Firebase Auth)
+    //   2. Détermine le restaurant via ownerUid en Firestore
+    //   3. Renvoie une signature cryptographique à usage unique
+    // Puis le navigateur upload directement vers Cloudinary avec cette signature.
     async function uploadProductImage(blob, productId) {
-        const path = `restaurants/${CLIENT_ID}/products/${productId}/${Date.now()}.jpg`;
-        const ref = storage.ref(path);
-        await ref.put(blob, { contentType: "image/jpeg" });
-        const url = await ref.getDownloadURL();
-        return { url, path };
+        // 1) Demander une signature à la Cloud Function
+        const callSignedUpload = functions.httpsCallable("signedUpload");
+        const result = await callSignedUpload({ productId });
+        const { signature, timestamp, api_key, cloud_name, folder } = result.data;
+
+        // 2) Construire le formulaire pour Cloudinary
+        const formData = new FormData();
+        formData.append("file", blob);
+        formData.append("api_key", api_key);
+        formData.append("timestamp", timestamp);
+        formData.append("signature", signature);
+        formData.append("folder", folder);
+
+        // 3) Uploader directement vers Cloudinary
+        const res = await fetch(
+            `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
+            { method: "POST", body: formData }
+        );
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error?.message || "Échec de l'upload Cloudinary");
+        }
+
+        const data = await res.json();
+        // data.secure_url -> URL HTTPS publique de l'image
+        // data.public_id  -> identifiant Cloudinary (utile pour suppression future)
+        return { url: data.secure_url, path: data.public_id };
     }
 
-    // Supprime un fichier de Storage (best-effort, n'échoue pas)
+    // Suppression d'image — désactivée côté client.
+    // Cloudinary exige une signature serveur pour supprimer (sécurité).
+    // Pour un nettoyage automatique, créer plus tard une Cloud Function "deleteImage".
+    // En attendant : les images orphelines restent sur Cloudinary.
+    // Ce n'est pas un souci : le plan free Cloudinary offre 25 GB de stockage.
     async function deleteStorageFile(path) {
-        if (!path) return;
-        try {
-            await storage.ref(path).delete();
-        } catch (err) {
-            // Le fichier n'existe peut-être plus — ce n'est pas grave
-            console.warn("Suppression Storage ignorée:", err.code);
-        }
+        // No-op : suppression Cloudinary nécessite une Cloud Function dédiée.
+        return;
     }
 
     function openProductModal(id = null) {
@@ -2488,7 +2519,7 @@
             const catName = cat ? cat.name : "—";
             const priceFmt = (parseFloat(product.price) || 0).toFixed(2) + "€";
             const thumbHtml = product.imageUrl
-                ? `<img src="${escapeHtml(product.imageUrl)}" alt="" loading="lazy">`
+                ? `<img src="${escapeHtml(cldImageUrl(product.imageUrl, 300))}" alt="" loading="lazy">`
                 : `🍽️`;
 
             bodyHtml = `
@@ -2706,7 +2737,7 @@
             const catName = cat ? cat.name : "—";
             const priceFmt = (parseFloat(p.price) || 0).toFixed(2) + "€";
             const thumbHtml = p.imageUrl
-                ? `<img src="${escapeHtml(p.imageUrl)}" alt="" loading="lazy">`
+                ? `<img src="${escapeHtml(cldImageUrl(p.imageUrl, 150))}" alt="" loading="lazy">`
                 : `🍽️`;
             return `
                 <div class="picker-row" onclick="selectProductForSpotlight('${escapeAttrJs(p.id)}')">
@@ -3280,6 +3311,19 @@
         return String(str || "").replace(/[&<>"']/g, c => ({
             "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
         }[c]));
+    }
+
+    // Transforme une URL Cloudinary pour livrer une vignette optimisée.
+    // Ex: cldImageUrl(url, 200) -> sert une image 200px en WebP/AVIF auto.
+    // f_auto = meilleur format pour le navigateur (WebP, AVIF...)
+    // q_auto = compression intelligente automatique
+    // w_XXX  = redimensionnement à la volée
+    // Pour les URL non-Cloudinary, retourne tel quel.
+    function cldImageUrl(url, width) {
+        if (!url) return url;
+        if (!url.includes("res.cloudinary.com")) return url;
+        if (!width) width = 400;
+        return url.replace("/upload/", `/upload/f_auto,q_auto,w_${width}/`);
     }
 
     let toastTimer = null;
