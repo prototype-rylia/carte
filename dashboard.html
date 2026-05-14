@@ -10,6 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <style>
+    html { overflow-y: scroll; }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     /* Empêche le zoom iOS au focus */
@@ -36,6 +37,7 @@
       background: var(--gray-light);
       color: var(--dark);
       min-height: 100vh;
+      scrollbar-gutter: stable;
     }
 
     /* ---- Topbar ---- */
@@ -150,14 +152,48 @@
     }
     .search-input::placeholder { color: #C4C9D4; }
 
-    .filter-select {
-      padding: 9px 14px; border: 1.5px solid var(--border);
-      border-radius: var(--radius); font-size: 14px;
-      color: var(--dark); background: var(--white);
-      outline: none; cursor: pointer; font-family: inherit;
-      transition: border-color 0.2s;
+    /* ---- Custom select (remplace les <select> natifs) ---- */
+    .cs-wrap { position: relative; display: inline-flex; }
+    .cs-wrap--full { width: 100%; }
+
+    .cs-trigger {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; padding: 9px 14px;
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      background: var(--white); font-size: 14px; color: var(--dark);
+      cursor: pointer; font-family: inherit; white-space: nowrap;
+      width: 100%; transition: border-color 0.2s, box-shadow 0.2s;
+      text-align: left;
     }
-    .filter-select:focus { border-color: var(--primary); }
+    .cs-wrap--full .cs-trigger { padding: 11px 14px; }
+    .cs-trigger:hover { border-color: #D1D5DB; }
+    .cs-trigger.open {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255,140,0,0.1);
+    }
+    .cs-arrow { flex-shrink: 0; color: var(--gray); transition: transform 0.2s; }
+    .cs-trigger.open .cs-arrow { transform: rotate(180deg); }
+
+    .cs-dropdown {
+      position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%;
+      background: var(--white); border: 1.5px solid var(--border);
+      border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      z-index: 300; overflow: hidden; display: none;
+      max-height: 260px; overflow-y: auto;
+    }
+    .cs-dropdown.open { display: block; animation: csFadeIn 0.12s ease; }
+    @keyframes csFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+    .cs-option {
+      padding: 10px 14px; font-size: 14px; color: var(--dark);
+      cursor: pointer; transition: background 0.1s, color 0.1s;
+      white-space: nowrap;
+    }
+    .cs-option:hover { background: var(--primary-soft); color: var(--primary); }
+    .cs-option.selected {
+      background: var(--primary-soft); color: var(--primary);
+      font-weight: 600;
+    }
 
     .btn-primary {
       padding: 9px 18px; background: var(--primary); color: white;
@@ -291,6 +327,9 @@
     .form-input:focus, .form-textarea:focus, .form-select:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(255,140,0,0.1);
+    }
+    .form-input:hover, .form-textarea:hover, .form-select:hover {
+      border-color: #D1D5DB;
     }
     .form-textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
 
@@ -825,21 +864,29 @@
     }
 
     /* ---- Responsive ---- */
+    /* Scroll lock quand une modale est ouverte */
+    html.modal-open { overflow: hidden; }
+
     @media (max-width: 768px) {
+
+      /* ---- Topbar ---- */
       .topbar { padding: 0 12px; height: 54px; }
       .topbar-name { font-size: 14px; }
       .topbar-logo { width: 30px; height: 30px; }
+      .user-badge { display: none; }
+      .btn-logout { font-size: 12px; padding: 5px 10px; min-height: 36px; }
+
+      /* ---- Page layout ---- */
       .page { padding: 16px 12px; }
       .page-title { font-size: 18px; }
       .page-subtitle { font-size: 12px; }
-      .user-badge { display: none; }
-      .btn-logout { font-size: 12px; padding: 5px 10px; }
-      .btn-preview { padding: 8px 14px; font-size: 13px; }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .btn-preview { width: 100%; justify-content: center; padding: 10px 14px; font-size: 13px; }
 
+      /* ---- Onglets ---- */
       .tabs-nav-wrap { margin-bottom: 20px; }
       .tabs-arrow {
-        display: flex;
-        position: absolute; top: 0; bottom: 2px; width: 32px;
+        display: flex; position: absolute; top: 0; bottom: 2px; width: 32px;
         align-items: center; justify-content: center;
         background: var(--white); border: none;
         font-size: 22px; font-weight: 700; color: var(--gray);
@@ -849,7 +896,7 @@
       }
       .tabs-arrow:active { color: var(--primary); }
       .tabs-arrow.hidden { opacity: 0; pointer-events: none; }
-      .tabs-arrow-left { left: 0; box-shadow: 6px 0 10px -4px rgba(255,255,255,0.9); }
+      .tabs-arrow-left  { left: 0;  box-shadow:  6px 0 10px -4px rgba(255,255,255,0.9); }
       .tabs-arrow-right { right: 0; box-shadow: -6px 0 10px -4px rgba(255,255,255,0.9); }
       .tabs-nav {
         overflow-x: auto; -webkit-overflow-scrolling: touch;
@@ -858,43 +905,83 @@
         padding: 0 30px;
       }
       .tabs-nav::-webkit-scrollbar { display: none; }
-      .tab-btn { padding: 10px 14px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+      .tab-btn { padding: 10px 14px; font-size: 12px; white-space: nowrap; flex-shrink: 0; min-height: 40px; }
 
+      /* ---- Toolbar ---- */
       .toolbar { flex-direction: column; gap: 8px; }
       .search-wrap { min-width: 100%; }
-      .filter-select, .btn-primary { width: 100%; justify-content: center; }
+      .cs-wrap { width: 100%; }
+      .cs-trigger { min-height: 44px; }
+      .btn-primary { width: 100%; justify-content: center; min-height: 44px; }
 
-      /* Table mobile */
-      th { font-size: 10px; padding: 10px 8px; }
-      td { padding: 10px 8px; font-size: 13px; }
-      th:nth-child(3), td:nth-child(3) { display: none; } /* Hide tags col */
-      .cell-product span { max-width: 180px; }
-      .btn-icon { padding: 5px 8px; font-size: 11px; }
+      /* ---- Table → Cartes produits ---- */
+      .table-card {
+        background: transparent; border: none;
+        border-radius: 0; overflow: visible; box-shadow: none;
+      }
+      .table-wrap { overflow-x: visible; }
+      table, tbody { display: block; width: 100%; }
+      thead { display: none; }
+      tbody tr {
+        display: flex; flex-wrap: wrap; align-items: center;
+        background: var(--white); border: 1px solid var(--border);
+        border-radius: 12px; margin-bottom: 8px; padding: 12px 14px;
+      }
+      tbody tr:last-child { margin-bottom: 0; }
+      tbody tr:hover { background: #FFFBF5; }
+      tbody td { display: block; border: none; padding: 0; }
 
-      /* Modal bottom-sheet mobile */
+      td.cell-product { width: 100%; margin-bottom: 8px; }
+      .cell-product span { max-width: none; }
+      td:nth-child(2) { flex: 1; font-size: 12px; color: var(--gray); align-self: center; }
+      td:nth-child(3) { display: none; }
+      td.cell-price   { font-size: 15px; margin: 0 10px; align-self: center; }
+      td:nth-child(5) { align-self: center; }
+      .btn-icon { width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; border-radius: 8px; }
+
+      /* ---- Modales bottom-sheet ---- */
       .modal-backdrop { padding: 0; align-items: flex-end; }
       .modal-box {
-        max-width: 100%; border-radius: 20px 20px 0 0;
-        max-height: 92vh; animation: modalSlideUp 0.3s ease;
+        max-width: 100%; width: 100%;
+        border-radius: 20px 20px 0 0;
+        max-height: 90vh; animation: modalSlideUp 0.28s ease;
       }
       @keyframes modalSlideUp {
         from { transform: translateY(100%); }
         to   { transform: translateY(0); }
       }
       .modal-header { padding: 16px 18px 12px; }
-      .modal-body { padding: 16px 18px; }
-      .modal-footer { padding: 12px 18px 16px; flex-direction: column-reverse; }
-      .btn-cancel, .btn-confirm { width: 100%; }
+      .modal-body   { padding: 16px 18px; max-height: calc(90vh - 130px); overflow-y: auto; }
+      .modal-footer { padding: 12px 18px 20px; flex-direction: column-reverse; gap: 8px; }
+      .btn-cancel, .btn-confirm { width: 100%; min-height: 44px; }
 
+      /* ---- Grilles multi-colonnes ---- */
+      .type-selector { grid-template-columns: 1fr; }
+      .spotlight-mgr-dates { grid-template-columns: 1fr; gap: 10px; }
+      .spotlight-mgr-actions { flex-direction: column; gap: 8px; }
+      .spotlight-mgr-actions .btn-pick,
+      .spotlight-mgr-actions .btn-change,
+      .spotlight-mgr-actions .btn-remove { width: 100%; min-height: 44px; justify-content: center; }
+
+      /* ---- Formulaire produit ---- */
+      .form-input, .form-textarea, .form-select { font-size: 16px !important; }
+      .cs-wrap--full .cs-trigger { min-height: 44px; }
+
+      /* ---- Settings ---- */
       .settings-card { padding: 18px; }
       .public-url-box { flex-direction: column; align-items: stretch; }
-      .btn-copy { width: 100%; }
-      .page-header { flex-direction: column; align-items: flex-start; }
-      .btn-preview { width: 100%; justify-content: center; }
+      .public-url { font-size: 12px; word-break: break-all; }
+      .btn-copy { width: 100%; min-height: 44px; }
 
+      /* ---- Catégories ---- */
       .cat-card { padding: 12px 14px; }
       .cat-actions { gap: 4px; }
-      .btn-move { width: 30px; height: 30px; }
+      .btn-move { width: 36px; height: 36px; }
+
+      /* ---- Form grille 2 colonnes → 1 ---- */
+      div[style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+      }
     }
   </style>
 </head>
@@ -1106,17 +1193,6 @@
         <div class="public-url" id="public-url">—</div>
         <button class="btn-copy" onclick="copyPublicUrl()">📋 Copier</button>
       </div>
-    </div>
-
-    <!-- Zone de danger -->
-    <div class="settings-card">
-      <h2 class="settings-title" style="color:var(--danger);"><span>⚠️</span> Zone sensible</h2>
-      <p style="font-size:13px; color:var(--gray); margin-bottom:14px;">
-        Ces actions sont définitives. Utilisez-les avec précaution.
-      </p>
-      <button class="btn-logout" style="color:var(--danger); border-color:#FECACA;" onclick="handleLogout()">
-        Se déconnecter
-      </button>
     </div>
   </div>
 
@@ -1345,6 +1421,9 @@
     // Ce nom sera l'ID du document dans Firestore : restaurants/{CLIENT_ID}
     const CLIENT_ID = "rylia-burger";
 
+    // ⚠️ URL publique de la carte — à modifier ici uniquement
+    const PUBLIC_URL = "https://rylia.fr/carte/";
+
     const firebaseConfig = {
         apiKey: "AIzaSyBpdJ0zmbq6dO5m-LOyiYkApZLeH4nCx9A",
         authDomain: "carte-digitale-df6c6.firebaseapp.com",
@@ -1447,10 +1526,8 @@
         currentUser = user;
         document.getElementById("user-email").innerText = user.email;
 
-        // URL publique (sans param, le CLIENT_ID est codé en dur dans index.html)
-        const publicUrl = `${window.location.origin}${window.location.pathname.replace(/dashboard\.html$/, "")}index.html`;
-        document.getElementById("public-url").innerText = publicUrl;
-        document.getElementById("btn-preview").href = publicUrl;
+        document.getElementById("public-url").innerText = PUBLIC_URL;
+        document.getElementById("btn-preview").href = PUBLIC_URL;
 
         await loadAllData();
         document.getElementById("page-loader").classList.add("hidden");
@@ -1631,6 +1708,9 @@
         prodSel.innerHTML = categories.length === 0
             ? `<option value="">— Créez d'abord une catégorie —</option>`
             : categories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
+
+        csFilter?.refresh();
+        csProdCategory?.refresh();
     }
 
     // ========================================================================
@@ -1746,11 +1826,13 @@
             input.value = "";
         }
         document.getElementById("cat-modal").classList.add("show");
+        lockBodyScroll();
         setTimeout(() => input.focus(), 100);
     }
 
     function closeCategoryModal() {
         document.getElementById("cat-modal").classList.remove("show");
+        unlockBodyScroll();
         editingCategoryId = null;
     }
 
@@ -2147,6 +2229,7 @@
             document.getElementById("prod-name").value = p.name || "";
             document.getElementById("prod-desc").value = p.description || "";
             document.getElementById("prod-category").value = p.categoryId || "";
+            csProdCategory?.refresh();
             document.getElementById("prod-price").value = (parseFloat(p.price) || "").toString();
 
             // Charger l'image existante si présente
@@ -2190,17 +2273,20 @@
             document.getElementById("prod-desc").value = "";
             document.getElementById("prod-category").value =
                 document.getElementById("product-cat-filter").value || (categories[0] && categories[0].id) || "";
+            csProdCategory?.refresh();
             document.getElementById("prod-price").value = "";
         }
 
         renderImageArea();
 
         document.getElementById("product-modal").classList.add("show");
+        lockBodyScroll();
         setTimeout(() => document.getElementById("prod-name").focus(), 100);
     }
 
     function closeProductModal() {
         document.getElementById("product-modal").classList.remove("show");
+        unlockBodyScroll();
         editingProductId = null;
     }
 
@@ -2705,11 +2791,13 @@
         renderSpotlightImageArea();
 
         document.getElementById("spotlight-form-modal").classList.add("show");
+        lockBodyScroll();
         setTimeout(() => document.getElementById("spotlight-name").focus(), 100);
     }
 
     function closeSpotlightFormModal() {
         document.getElementById("spotlight-form-modal").classList.remove("show");
+        unlockBodyScroll();
         document.getElementById("spotlight-image-input").value = "";
     }
 
@@ -2956,6 +3044,7 @@
         emojiInput.oninput = updateTagPreview;
 
         modal.classList.add("show");
+        lockBodyScroll();
         setTimeout(() => labelInput.focus(), 100);
     }
 
@@ -2993,6 +3082,7 @@
 
     function closeTagModal() {
         document.getElementById("tag-modal").classList.remove("show");
+        unlockBodyScroll();
         editingTaxId = null;
         editingTaxKind = null;
     }
@@ -3174,9 +3264,11 @@
         document.getElementById("confirm-message").innerText = message;
         pendingConfirm = onConfirm;
         document.getElementById("confirm-modal").classList.add("show");
+        lockBodyScroll();
     }
     function closeConfirmModal() {
         document.getElementById("confirm-modal").classList.remove("show");
+        unlockBodyScroll();
         pendingConfirm = null;
     }
     document.getElementById("confirm-btn").addEventListener("click", async () => {
@@ -3275,6 +3367,9 @@
         return url.replace("/upload/", `/upload/f_auto,q_auto,w_${width}/`);
     }
 
+    function lockBodyScroll() { document.documentElement.classList.add("modal-open"); }
+    function unlockBodyScroll() { document.documentElement.classList.remove("modal-open"); }
+
     let toastTimer = null;
     function showToast(msg, type = "") {
         const t = document.getElementById("toast");
@@ -3283,6 +3378,95 @@
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
     }
+
+    // ========================================================================
+    // CUSTOM SELECT — remplace les <select> natifs
+    // ========================================================================
+    class CustomSelect {
+        constructor(nativeSelect) {
+            this.native = nativeSelect;
+            this._build();
+            this._listen();
+        }
+
+        _esc(s) {
+            return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+        }
+
+        _build() {
+            const isFull = this.native.classList.contains("form-select");
+            const wrap = document.createElement("div");
+            wrap.className = "cs-wrap" + (isFull ? " cs-wrap--full" : "");
+            this.native.parentNode.insertBefore(wrap, this.native);
+            wrap.appendChild(this.native);
+            this.native.style.display = "none";
+
+            this._trigger = document.createElement("button");
+            this._trigger.type = "button";
+            this._trigger.className = "cs-trigger";
+            wrap.appendChild(this._trigger);
+
+            this._dropdown = document.createElement("div");
+            this._dropdown.className = "cs-dropdown";
+            wrap.appendChild(this._dropdown);
+
+            this.refresh();
+        }
+
+        refresh() {
+            const opts = Array.from(this.native.options);
+            const val  = this.native.value;
+            const sel  = opts.find(o => o.value === val) || opts[0];
+
+            this._trigger.innerHTML = `
+                <span class="cs-label">${sel ? this._esc(sel.text) : "—"}</span>
+                <svg class="cs-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+            this._dropdown.innerHTML = opts.map(o =>
+                `<div class="cs-option${o.value === val ? " selected" : ""}" data-val="${this._esc(o.value)}">${this._esc(o.text)}</div>`
+            ).join("");
+
+            this._dropdown.querySelectorAll(".cs-option").forEach(el => {
+                el.addEventListener("click", () => {
+                    this.native.value = el.dataset.val;
+                    this.native.dispatchEvent(new Event("change", { bubbles: true }));
+                    this.close();
+                    this.refresh();
+                });
+            });
+        }
+
+        open() {
+            document.querySelectorAll(".cs-dropdown.open").forEach(d => {
+                d.classList.remove("open");
+                d.previousElementSibling.classList.remove("open");
+            });
+            this._trigger.classList.add("open");
+            this._dropdown.classList.add("open");
+        }
+
+        close() {
+            this._trigger.classList.remove("open");
+            this._dropdown.classList.remove("open");
+        }
+
+        _listen() {
+            this._trigger.addEventListener("click", e => {
+                e.stopPropagation();
+                this._dropdown.classList.contains("open") ? this.close() : this.open();
+            });
+            document.addEventListener("click", () => this.close());
+        }
+    }
+
+    // Instances globales pour pouvoir les rafraîchir depuis d'autres fonctions
+    let csFilter = null;
+    let csProdCategory = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        csFilter      = new CustomSelect(document.getElementById("product-cat-filter"));
+        csProdCategory = new CustomSelect(document.getElementById("prod-category"));
+    });
 
     // Fermer les modales avec Echap
     document.addEventListener("keydown", (e) => {
@@ -3306,6 +3490,6 @@
         });
     });
 </script>
- 
+
 </body>
 </html>
