@@ -333,16 +333,9 @@
             border-radius: 14px;
             overflow: hidden;
             box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-            cursor: pointer;
-            transition: transform 0.2s ease;
             scroll-snap-align: start;
-            border: none;
-            text-align: left;
-            font-family: inherit;
-            padding: 0;
             display: block;
         }
-        .spotlight-card:active { transform: scale(0.97); }
 
         .spotlight-card-image {
             width: 100%;
@@ -384,6 +377,16 @@
             color: var(--text-dark);
             line-height: 1.25;
             margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .spotlight-card-desc {
+            font-size: 0.78rem;
+            color: var(--text-grey);
+            line-height: 1.35;
+            margin-bottom: 5px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -680,25 +683,21 @@
             return 0;
         }
 
-        // Cherche dans restaurantInfo.spotlights si le produit donné est dans un des 3 slots
-        // (day / week / month). Retourne null si :
-        //  - le produit n'est dans aucun slot
-        //  - le slot est expiré (endsAt < now)
-        //  - le slot n'a pas encore commencé (startsAt > now)
-        function getActiveSpotlight(p) {
-            if (!p || !restaurantInfo || !restaurantInfo.spotlights) return null;
+        // Retourne le premier slot spotlight actif (non expiré, déjà commencé), ou null.
+        function getActiveSpotlightSlot() {
+            if (!restaurantInfo || !restaurantInfo.spotlights) return null;
             const slots = restaurantInfo.spotlights;
             const now = Date.now();
             for (const type of ["day", "week", "month"]) {
                 const slot = slots[type];
-                if (!slot || slot.productId !== p.id) continue;
+                if (!slot || !slot.name) continue;
                 const def = SPOTLIGHT_TYPES[type];
                 if (!def) continue;
                 const startsAt = tsToMillis(slot.startsAt);
                 const endsAt   = tsToMillis(slot.endsAt);
-                if (endsAt > 0 && endsAt < now) return null;     // expiré
-                if (startsAt > 0 && startsAt > now) return null; // futur
-                return { type, label: def.label, emoji: def.emoji };
+                if (endsAt > 0 && endsAt < now) continue;     // expiré
+                if (startsAt > 0 && startsAt > now) continue; // futur
+                return { type, slot, label: def.label, emoji: def.emoji };
             }
             return null;
         }
@@ -791,48 +790,32 @@
             const cardsBox = document.getElementById("spotlight-cards");
             const titleEl = document.getElementById("spotlight-section-title");
 
-            // On rassemble tous les produits avec un spotlight actif (en respectant l'ordre des catégories,
-            // puis l'ordre interne des produits). En pratique il y en aura au plus 1 dans le nouveau modèle.
-            const featured = [];
-            categories.forEach(cat => {
-                products
-                    .filter(p => p.categoryId === cat.id)
-                    .forEach(p => {
-                        const sp = getActiveSpotlight(p);
-                        if (sp) featured.push({ product: p, spotlight: sp });
-                    });
-            });
+            const active = getActiveSpotlightSlot();
 
-            if (featured.length === 0) {
+            if (!active) {
                 section.classList.add("empty");
                 cardsBox.innerHTML = "";
                 return;
             }
             section.classList.remove("empty");
 
-            // Titre dynamique : reprend le label du type du premier (et normalement seul) plat à l'honneur.
-            // Si plusieurs (anciens comptes), on retombe sur le générique "À la une".
-            if (featured.length === 1) {
-                const sp = featured[0].spotlight;
-                titleEl.innerText = `${sp.emoji} ${sp.label}`;
-            } else {
-                titleEl.innerText = "À la une";
-            }
+            const { slot, type, label, emoji } = active;
+            titleEl.innerText = `${emoji} ${label}`;
 
-            cardsBox.innerHTML = featured.map(({ product: p, spotlight: sp }) => {
-                const priceDisplay = (parseFloat(p.price) || 0).toFixed(2).replace(".", ",") + "€";
-                const imgHtml = p.imageUrl
-                    ? `<div class="spotlight-card-image"><img src="${escapeHtml(p.imageUrl)}" alt="" loading="lazy"><span class="spotlight-card-tag ${sp.type}">${sp.emoji} ${escapeHtml(sp.label)}</span></div>`
-                    : `<div class="spotlight-card-image no-img">${sp.emoji}<span class="spotlight-card-tag ${sp.type}">${escapeHtml(sp.label)}</span></div>`;
-                return `
-                    <button type="button" class="spotlight-card" onclick="goToProduct('${escapeAttr(p.categoryId)}', '${escapeAttr(p.id)}')">
-                        ${imgHtml}
-                        <div class="spotlight-card-body">
-                            <div class="spotlight-card-name">${escapeHtml(p.name || "")}</div>
-                            <div class="spotlight-card-price">${priceDisplay}</div>
-                        </div>
-                    </button>`;
-            }).join("");
+            const priceDisplay = (parseFloat(slot.price) || 0).toFixed(2).replace(".", ",") + "€";
+            const imgHtml = slot.imageUrl
+                ? `<div class="spotlight-card-image"><img src="${escapeHtml(slot.imageUrl)}" alt="" loading="lazy"><span class="spotlight-card-tag ${type}">${emoji} ${escapeHtml(label)}</span></div>`
+                : `<div class="spotlight-card-image no-img">${emoji}<span class="spotlight-card-tag ${type}">${escapeHtml(label)}</span></div>`;
+
+            cardsBox.innerHTML = `
+                <div class="spotlight-card">
+                    ${imgHtml}
+                    <div class="spotlight-card-body">
+                        <div class="spotlight-card-name">${escapeHtml(slot.name || "")}</div>
+                        ${slot.description ? `<div class="spotlight-card-desc">${escapeHtml(slot.description)}</div>` : ""}
+                        <div class="spotlight-card-price">${priceDisplay}</div>
+                    </div>
+                </div>`;
         }
 
         // Navigue vers un produit : ouvre sa catégorie puis fait défiler
@@ -885,13 +868,7 @@
         }
 
         function dishCardHtml(p) {
-            // 1) Spotlight actif (plat du jour/semaine/mois)
-            const sp = getActiveSpotlight(p);
-            const ribbonHtml = sp
-                ? `<span class="spotlight-ribbon ${sp.type}">${sp.emoji} ${escapeHtml(sp.label)}</span>`
-                : "";
-
-            // 2) Badges (Best Seller, Populaire, …) — affichés au niveau du titre, pas dans le footer
+            // 1) Badges (Best Seller, Populaire, …) — affichés au niveau du titre, pas dans le footer
             const badgesHtml = (p.badges || []).map(bid => {
                 const h = highlights.find(x => x.id === bid);
                 if (!h) return "";
@@ -927,10 +904,7 @@
             const dataEnvies = (p.tags || []).join(" ");
             const dataAllergenes = (p.allergens || []).join(" ");
 
-            // Si le plat n'a pas d'image, le ruban est intégré dans le contenu
             const noImageClass = p.imageUrl ? "" : " no-image";
-            const ribbonInImage = p.imageUrl && ribbonHtml ? ribbonHtml : "";
-            const ribbonInContent = !p.imageUrl && ribbonHtml ? ribbonHtml : "";
 
             // Le footer ne contient plus les badges (déplacés sous le titre)
             const footerHtml = (tagsHtml || allergenText)
@@ -939,9 +913,8 @@
 
             return `
                 <div class="dish-card${noImageClass}" data-product-id="${escapeAttr(p.id)}" data-envies="${dataEnvies}" data-allergenes="${dataAllergenes}">
-                    ${p.imageUrl ? `<div class="dish-image">${ribbonInImage}<img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.name || '')}" loading="lazy"></div>` : ''}
+                    ${p.imageUrl ? `<div class="dish-image"><img src="${escapeHtml(p.imageUrl)}" alt="${escapeHtml(p.name || '')}" loading="lazy"></div>` : ''}
                     <div class="dish-content">
-                        ${ribbonInContent}
                         <div class="dish-header">
                             <div class="dish-title-block">
                                 <div class="dish-name">${escapeHtml(p.name || "")}</div>
