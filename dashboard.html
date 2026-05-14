@@ -932,7 +932,8 @@
       tbody td { display: block; border: none; padding: 0; }
 
       td.cell-product { width: 100%; margin-bottom: 8px; }
-      .cell-product span { max-width: none; }
+      .cell-product span { max-width: none; white-space: normal; overflow: visible; text-overflow: clip; font-size: 12px; }
+      .tax-usage-count { display: none; }
       td:nth-child(2) { flex: 1; font-size: 12px; color: var(--gray); align-self: center; }
       td:nth-child(3) { display: none; }
       td.cell-price   { font-size: 15px; margin: 0 10px; align-self: center; }
@@ -2948,7 +2949,7 @@
                     <div class="tax-row">
                         <span class="tax-emoji">${escapeHtml(t.emoji || "")}</span>
                         <span class="tax-pill-preview" style="background:${c.bg}; color:${c.fg};">${escapeHtml(t.label)}</span>
-                        <span class="tax-label" style="font-size:12px; color:var(--gray); flex:0 1 auto;">${usageCount} produit${usageCount > 1 ? "s" : ""}</span>
+                        <span class="tax-label tax-usage-count" style="font-size:12px; color:var(--gray); flex:0 1 auto;">${usageCount} produit${usageCount > 1 ? "s" : ""}</span>
                         <span style="flex:1;"></span>
                         <div class="tax-actions">
                             <button class="btn-move" onclick="moveTaxonomy('tag', '${t.id}', -1)" ${i === 0 ? "disabled" : ""}>↑</button>
@@ -2970,7 +2971,7 @@
                 return `
                     <div class="tax-row">
                         <span class="tax-pill-preview" style="background:var(--danger-soft); color:var(--danger);">${escapeHtml(a.label)}</span>
-                        <span class="tax-label" style="font-size:12px; color:var(--gray); flex:0 1 auto;">${usageCount} produit${usageCount > 1 ? "s" : ""}</span>
+                        <span class="tax-label tax-usage-count" style="font-size:12px; color:var(--gray); flex:0 1 auto;">${usageCount} produit${usageCount > 1 ? "s" : ""}</span>
                         <span style="flex:1;"></span>
                         <div class="tax-actions">
                             <button class="btn-move" onclick="moveTaxonomy('allergen', '${a.id}', -1)" ${i === 0 ? "disabled" : ""}>↑</button>
