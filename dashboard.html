@@ -99,27 +99,6 @@
     }
     .btn-preview:hover { background: #1F2937; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
 
-    /* ---- KPI ---- */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px; margin-bottom: 28px;
-    }
-
-    .kpi-card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 20px 22px;
-    }
-
-    .kpi-card.accent { border-left: 3px solid var(--primary); }
-
-    .kpi-label {
-      font-size: 12px; font-weight: 700; color: var(--gray);
-      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
-    }
-
-    .kpi-value { font-size: 32px; font-weight: 700; color: var(--dark); line-height: 1; }
-
     /* ---- Onglets ---- */
     .tabs-nav-wrap { position: relative; margin-bottom: 28px; }
 
@@ -857,11 +836,6 @@
       .btn-logout { font-size: 12px; padding: 5px 10px; }
       .btn-preview { padding: 8px 14px; font-size: 13px; }
 
-      .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-      .kpi-card { padding: 14px 16px; }
-      .kpi-value { font-size: 24px; }
-      .kpi-label { font-size: 11px; }
-
       .tabs-nav-wrap { margin-bottom: 20px; }
       .tabs-arrow {
         display: flex;
@@ -956,26 +930,6 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       Voir ma carte
     </a>
-  </div>
-
-  <!-- KPIs -->
-  <div class="kpi-grid">
-    <div class="kpi-card accent">
-      <div class="kpi-label">Catégories</div>
-      <div class="kpi-value" id="kpi-categories">—</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Produits</div>
-      <div class="kpi-value" id="kpi-products">—</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Prix moyen</div>
-      <div class="kpi-value" id="kpi-avg-price">—</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Plat le plus cher</div>
-      <div class="kpi-value" id="kpi-top-price" style="font-size:18px; padding-top:4px;">—</div>
-    </div>
   </div>
 
   <!-- Onglets -->
@@ -1314,32 +1268,46 @@
 </div>
 
 <!-- ============================================
-     MODALE SÉLECTION DE PRODUIT (pour À l'honneur)
+     MODALE PLAT DU JOUR — formulaire direct
      ============================================ -->
-<div class="modal-backdrop" id="product-picker-modal">
+<div class="modal-backdrop" id="spotlight-form-modal">
   <div class="modal-box" style="max-width: 560px;">
     <div class="modal-header">
-      <div class="modal-title" id="product-picker-title">Choisir un plat</div>
-      <button class="modal-close" onclick="closeProductPickerModal()">
+      <div class="modal-title" id="spotlight-form-title">🌟 Plat du jour</div>
+      <button class="modal-close" onclick="closeSpotlightFormModal()">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <div class="modal-body" style="padding-top: 16px;">
+    <div class="modal-body">
 
-      <div class="search-wrap" style="margin-bottom: 14px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" class="search-input" id="picker-search" placeholder="Rechercher un produit…" oninput="renderProductPickerList()">
+      <div class="form-group">
+        <label class="form-label">Photo <span style="font-weight:400; color:var(--gray);">(optionnel)</span></label>
+        <div class="image-upload-area" id="spotlight-image-upload-area"><!-- généré par renderSpotlightImageArea() --></div>
+        <input type="file" id="spotlight-image-input" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="handleSpotlightImageSelect(event)">
+        <p class="form-hint">JPG, PNG ou WEBP — automatiquement optimisée</p>
       </div>
 
-      <div id="picker-list" style="max-height: 50vh; overflow-y: auto; margin: 0 -8px;">
-        <!-- Liste générée par renderProductPickerList() -->
+      <div class="form-group">
+        <label class="form-label">Nom du plat</label>
+        <input type="text" id="spotlight-name" class="form-input" placeholder="Ex: Le Bœuf & Bacon">
       </div>
 
-      <div class="modal-feedback error" id="product-picker-feedback"></div>
+      <div class="form-group">
+        <label class="form-label">Description <span style="font-weight:400; color:var(--gray);">(optionnel)</span></label>
+        <textarea id="spotlight-desc" class="form-textarea" placeholder="Ex: Steak haché, cheddar fondant, bacon fumé…"></textarea>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Prix (€)</label>
+        <input type="number" id="spotlight-price" class="form-input" placeholder="11.00" step="0.10" min="0">
+      </div>
+
+      <div class="modal-feedback error" id="spotlight-form-feedback"></div>
 
     </div>
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeProductPickerModal()">Annuler</button>
+      <button class="btn-cancel" onclick="closeSpotlightFormModal()">Annuler</button>
+      <button class="btn-confirm" id="spotlight-form-confirm" onclick="saveSpotlight()">Publier</button>
     </div>
   </div>
 </div>
@@ -1556,7 +1524,6 @@
             // Initialise l'objet spotlights s'il n'existe pas (rétrocompat anciens comptes)
             if (!restaurantData.spotlights) restaurantData.spotlights = {};
 
-            refreshKPIs();
             refreshCategoryFilter();
             renderCategories();
             renderProducts();
@@ -1614,29 +1581,6 @@
                     </button>
                 </div>
             </div>`;
-    }
-
-    // ========================================================================
-    // KPIs
-    // ========================================================================
-    function refreshKPIs() {
-        document.getElementById("kpi-categories").innerText = categories.length;
-        document.getElementById("kpi-products").innerText = products.length;
-
-        if (products.length === 0) {
-            document.getElementById("kpi-avg-price").innerText = "—";
-            document.getElementById("kpi-top-price").innerText = "—";
-        } else {
-            const prices = products.map(p => parseFloat(p.price) || 0);
-            const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
-            document.getElementById("kpi-avg-price").innerText = avg.toFixed(2) + "€";
-
-            const topProduct = products.reduce((a, b) =>
-                (parseFloat(b.price) || 0) > (parseFloat(a.price) || 0) ? b : a
-            );
-            document.getElementById("kpi-top-price").innerText =
-                topProduct.name + " — " + (parseFloat(topProduct.price) || 0).toFixed(2) + "€";
-        }
     }
 
     // ========================================================================
@@ -1726,20 +1670,7 @@
             const cat = categories.find(c => c.id === p.categoryId);
             const catName = cat ? cat.name : "—";
 
-            // 1) Ruban spotlight (plat du jour / semaine / mois)
-            const sp = getSpotlightState(p);
-            let spotlightHtml = "";
-            if (sp) {
-                const cls = sp.expired ? "expired" : sp.type;
-                const titleAttr = sp.expired
-                    ? `Expiré le ${formatShortDate(sp.endsAt)}`
-                    : (sp.notYetActive
-                        ? `Programmé à partir du ${formatShortDate(sp.startsAt)}`
-                        : `Actif jusqu'au ${formatShortDate(sp.endsAt)}`);
-                spotlightHtml = `<span class="spotlight-badge ${cls}" title="${escapeHtml(titleAttr)}">${sp.emoji} ${escapeHtml(sp.label)}${sp.expired ? " · expiré" : ""}</span>`;
-            }
-
-            // 2) Badges (highlights) — affichés en premier, plus prononcés
+            // 1) Badges (highlights) — affichés en premier, plus prononcés
             const badgesHtml = (p.badges || []).map(bid => {
                 const h = highlights.find(x => x.id === bid);
                 if (!h) return "";
@@ -1762,7 +1693,7 @@
                 return `<span class="tag-pill allergen">${escapeHtml(a.label)}</span>`;
             }).join("");
 
-            const allTagsHtml = spotlightHtml + badgesHtml + tagsHtml;
+            const allTagsHtml = badgesHtml + tagsHtml;
 
             const thumbHtml = p.imageUrl
                 ? `<div class="product-thumb"><img src="${escapeHtml(cldImageUrl(p.imageUrl, 200))}" alt="" loading="lazy"></div>`
@@ -1863,7 +1794,6 @@
                 categories.push({ id: ref.id, ...newCat, order: categories.length });
                 showToast("Catégorie créée", "success");
             }
-            refreshKPIs();
             refreshCategoryFilter();
             renderCategories();
             renderProducts();
@@ -1932,19 +1862,6 @@
                     .map(p => deleteStorageFile(p.imagePath))
             );
 
-            // Libérer les slots spotlight qui pointent vers un des produits supprimés
-            const slots = (restaurantData && restaurantData.spotlights) || {};
-            const deletedIds = new Set(relatedProducts.map(p => p.id));
-            const slotsToClear = ["day", "week", "month"].filter(t => slots[t] && deletedIds.has(slots[t].productId));
-            if (slotsToClear.length > 0) {
-                const updatePayload = {};
-                slotsToClear.forEach(t => {
-                    updatePayload[`spotlights.${t}`] = firebase.firestore.FieldValue.delete();
-                    delete restaurantData.spotlights[t];
-                });
-                await restaurantRef.update(updatePayload);
-            }
-
             products = products.filter(p => p.categoryId !== id);
             categories = categories.filter(c => c.id !== id);
             // Re-order remaining categories
@@ -1958,7 +1875,6 @@
                 await batch2.commit();
             }
 
-            refreshKPIs();
             refreshCategoryFilter();
             renderCategories();
             renderProducts();
@@ -2408,7 +2324,6 @@
             }
 
             showToast(editingProductId ? "Produit modifié" : "Produit créé", "success");
-            refreshKPIs();
             renderProducts();
             // Le produit a peut-être changé : on rafraîchit aussi les spotlights
             // (au cas où c'est un produit qui est en spotlight et qui a été renommé/changé d'image)
@@ -2442,20 +2357,6 @@
             await restaurantRef.collection("products").doc(id).delete();
             products = products.filter(p => p.id !== id);
 
-            // Si ce produit était dans un slot spotlight, on libère le slot
-            const slots = (restaurantData && restaurantData.spotlights) || {};
-            const slotsToClear = ["day", "week", "month"].filter(t => slots[t] && slots[t].productId === id);
-            if (slotsToClear.length > 0) {
-                const updatePayload = {};
-                slotsToClear.forEach(t => {
-                    updatePayload[`spotlights.${t}`] = firebase.firestore.FieldValue.delete();
-                    delete restaurantData.spotlights[t];
-                });
-                await restaurantRef.update(updatePayload);
-                renderSpotlights();
-            }
-
-            refreshKPIs();
             renderCategories(); // for the product count
             renderProducts();
             showToast("Produit supprimé", "success");
@@ -2468,63 +2369,75 @@
     // ========================================================================
     // À L'HONNEUR — gestion du Plat du jour (un seul à la fois)
     //
-    // Stockage : restaurantData.spotlights = { <type>: { productId, startsAt, endsAt } }
-    // où <type> est exactement un parmi "day" | "week" | "month".
-    // Le user choisit le type via le sélecteur dans l'UI, par défaut "day".
+    // Stockage : restaurantData.spotlights = { <type>: { name, description, price, imageUrl, startsAt, endsAt } }
+    // Le plat est saisi directement — il n'est PAS lié à un produit de la carte.
     // ========================================================================
 
-    // Couleurs par type (cohérentes avec la carte publique)
     const SPOTLIGHT_TYPE_STYLE = {
         day:   { color: "#FF6B00", bg: "#FFF4E5" },
         week:  { color: "#1D4ED8", bg: "#EFF6FF" },
         month: { color: "#6B21A8", bg: "#FAF5FF" }
     };
 
-    // Type actuellement affiché dans l'UI (peut différer du type stocké si le user change avant
-    // de sélectionner un produit). Initialisé/synchronisé dans renderSpotlights().
     let currentSpotlightType = "day";
 
-    // Retourne le slot actuellement utilisé : { type, slot } ou null si rien n'est défini
+    // État de l'image dans la modale spotlight
+    let spotlightImageState = { currentUrl: null, pendingAction: null, previewDataUrl: null };
+
     function getCurrentSpotlightSlot() {
         const slots = (restaurantData && restaurantData.spotlights) || {};
         for (const type of ["day", "week", "month"]) {
-            if (slots[type] && slots[type].productId) {
+            if (slots[type] && slots[type].name) {
                 return { type, slot: slots[type] };
             }
         }
         return null;
     }
 
-    function renderSpotlights() {
+    async function renderSpotlights() {
+        // Auto-suppression des slots expirés
+        if (restaurantData && restaurantData.spotlights) {
+            const now = Date.now();
+            const payload = {};
+            let hasExpired = false;
+            for (const type of ["day", "week", "month"]) {
+                const slot = restaurantData.spotlights[type];
+                if (slot && slot.name) {
+                    const endsAt = tsToMillis(slot.endsAt);
+                    if (endsAt > 0 && endsAt < now) {
+                        payload[`spotlights.${type}`] = firebase.firestore.FieldValue.delete();
+                        delete restaurantData.spotlights[type];
+                        hasExpired = true;
+                    }
+                }
+            }
+            if (hasExpired) {
+                try { await restaurantRef.update(payload); } catch (e) { console.error(e); }
+            }
+        }
+
         const box = document.getElementById("spotlights-container");
         const current = getCurrentSpotlightSlot();
+        if (current) currentSpotlightType = current.type;
 
-        // Si un slot est rempli, on aligne le type affiché dessus.
-        // Sinon, on garde le type que l'user a choisi via le sélecteur (défaut: "day").
-        if (current) {
-            currentSpotlightType = current.type;
-        }
         const type = currentSpotlightType;
         const def = SPOTLIGHT_TYPES[type];
         const style = SPOTLIGHT_TYPE_STYLE[type];
 
-        // Le produit affiché correspond au slot du type courant (s'il existe)
         const slots = (restaurantData && restaurantData.spotlights) || {};
         const slot = slots[type];
-        const product = slot ? products.find(p => p.id === slot.productId) : null;
+        const hasData = !!(slot && slot.name);
 
-        // Statut (Actif / Programmé / Expiré / Aucun plat)
         let statusLabel = "Aucun plat", statusClass = "empty";
-        if (product) {
+        if (hasData) {
             const startsAt = tsToMillis(slot.startsAt);
             const endsAt   = tsToMillis(slot.endsAt);
             const now = Date.now();
-            if (endsAt > 0 && endsAt < now)     { statusLabel = "Expiré";    statusClass = "expired"; }
-            else if (startsAt > now)            { statusLabel = "Programmé"; statusClass = "empty"; }
-            else                                { statusLabel = "Actif";     statusClass = "active"; }
+            if (endsAt > 0 && endsAt < now)  { statusLabel = "Expiré";    statusClass = "expired"; }
+            else if (startsAt > now)          { statusLabel = "Programmé"; statusClass = "empty"; }
+            else                              { statusLabel = "Actif";     statusClass = "active"; }
         }
 
-        // ===== Sélecteur de type =====
         const typeSelectorHtml = `
             <div class="type-selector" style="--type-color:${style.color};">
                 ${["day","week","month"].map(t => {
@@ -2542,24 +2455,21 @@
                 }).join("")}
             </div>`;
 
-        // ===== Contenu (preview produit OU état vide) =====
         let bodyHtml;
-        if (product) {
+        if (hasData) {
             const startsAt = tsToMillis(slot.startsAt);
             const endsAt   = tsToMillis(slot.endsAt);
-            const cat = categories.find(c => c.id === product.categoryId);
-            const catName = cat ? cat.name : "—";
-            const priceFmt = (parseFloat(product.price) || 0).toFixed(2) + "€";
-            const thumbHtml = product.imageUrl
-                ? `<img src="${escapeHtml(cldImageUrl(product.imageUrl, 300))}" alt="" loading="lazy">`
+            const priceFmt = (parseFloat(slot.price) || 0).toFixed(2) + "€";
+            const thumbHtml = slot.imageUrl
+                ? `<img src="${escapeHtml(cldImageUrl(slot.imageUrl, 300))}" alt="" loading="lazy">`
                 : `🍽️`;
 
             bodyHtml = `
                 <div class="spotlight-product-preview">
                     <div class="spotlight-product-thumb">${thumbHtml}</div>
                     <div class="spotlight-product-info">
-                        <div class="spotlight-product-name">${escapeHtml(product.name || "")}</div>
-                        <div class="spotlight-product-cat">${escapeHtml(catName)}</div>
+                        <div class="spotlight-product-name">${escapeHtml(slot.name || "")}</div>
+                        ${slot.description ? `<div class="spotlight-product-cat">${escapeHtml(slot.description)}</div>` : ""}
                         <div class="spotlight-product-price">${priceFmt}</div>
                     </div>
                 </div>
@@ -2579,23 +2489,23 @@
                 </div>
 
                 <div class="spotlight-mgr-actions">
-                    <button class="btn-change" onclick="openProductPicker()">Changer de plat</button>
+                    <button class="btn-change" onclick="openSpotlightForm(true)">Modifier</button>
                     <button class="btn-remove" onclick="removeSpotlight()">Retirer</button>
                 </div>`;
         } else {
             bodyHtml = `
                 <div class="spotlight-empty-state">
-                    <p>Aucun plat sélectionné. Choisissez la durée ci-dessus puis cliquez sur le bouton.</p>
+                    <p>Aucun plat défini. Choisissez la durée ci-dessus puis cliquez sur le bouton.</p>
                 </div>
                 <div class="spotlight-mgr-actions">
-                    <button class="btn-pick" onclick="openProductPicker()">
-                        <span style="font-size:14px; line-height:1;">+</span> Sélectionner un plat
+                    <button class="btn-pick" onclick="openSpotlightForm(false)">
+                        <span style="font-size:14px; line-height:1;">+</span> Ajouter un plat
                     </button>
                 </div>`;
         }
 
         box.innerHTML = `
-            <div class="spotlight-card-mgr ${product ? "has-product" : ""}"
+            <div class="spotlight-card-mgr ${hasData ? "has-product" : ""}"
                  style="--type-color:${style.color}; --type-bg:${style.bg};">
 
                 <div class="spotlight-card-mgr-header">
@@ -2613,9 +2523,6 @@
             </div>`;
     }
 
-    // L'utilisateur change le type (Jour / Semaine / Mois).
-    // Si un produit est déjà sélectionné, on déplace le slot vers le nouveau type
-    // et on recalcule la date de fin selon la nouvelle durée.
     async function changeSpotlightType(newType) {
         if (newType === currentSpotlightType) return;
         if (!SPOTLIGHT_TYPES[newType]) return;
@@ -2626,26 +2533,25 @@
 
         currentSpotlightType = newType;
 
-        // Cas 1 : aucun produit défini → simple changement d'UI, rien à persister
-        if (!oldSlot || !oldSlot.productId) {
+        if (!oldSlot || !oldSlot.name) {
             renderSpotlights();
             return;
         }
 
-        // Cas 2 : un produit est en place → on le déplace vers le nouveau type
-        // (durée recalculée à partir de la même date de début)
         const def = SPOTLIGHT_TYPES[newType];
         const startsAtMs = tsToMillis(oldSlot.startsAt) || Date.now();
         const endsAtMs   = startsAtMs + def.durationDays * 24 * 60 * 60 * 1000;
 
         const newSlot = {
-            productId: oldSlot.productId,
-            startsAt:  firebase.firestore.Timestamp.fromMillis(startsAtMs),
-            endsAt:    firebase.firestore.Timestamp.fromMillis(endsAtMs)
+            name:        oldSlot.name,
+            description: oldSlot.description || "",
+            price:       oldSlot.price || 0,
+            imageUrl:    oldSlot.imageUrl || "",
+            startsAt:    firebase.firestore.Timestamp.fromMillis(startsAtMs),
+            endsAt:      firebase.firestore.Timestamp.fromMillis(endsAtMs)
         };
 
         try {
-            // Update atomique : on supprime l'ancien et on crée le nouveau en une fois
             await restaurantRef.update({
                 [`spotlights.${oldType}`]: firebase.firestore.FieldValue.delete(),
                 [`spotlights.${newType}`]: newSlot
@@ -2653,21 +2559,16 @@
             delete restaurantData.spotlights[oldType];
             restaurantData.spotlights[newType] = newSlot;
             renderSpotlights();
-            renderProducts();
             showToast(`Durée changée : ${def.label}`, "success");
         } catch (err) {
             console.error(err);
-            // Rollback de l'UI en cas d'erreur
             currentSpotlightType = oldType;
             renderSpotlights();
             showToast("Erreur lors du changement", "error");
         }
     }
 
-    // Recalcule la date de fin auto en fonction de la nouvelle date de début saisie,
-    // puis persiste sur Firestore (on ne change pas le produit, juste les dates).
     async function updateSpotlightDates(type) {
-        // Le type est passé pour rester explicite mais doit normalement = currentSpotlightType
         if (!restaurantData.spotlights || !restaurantData.spotlights[type]) return;
         const def = SPOTLIGHT_TYPES[type];
         if (!def) return;
@@ -2679,19 +2580,17 @@
         const startsAtMs = new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
         const endsAtMs   = startsAtMs + def.durationDays * 24 * 60 * 60 * 1000;
 
-        // Mise à jour optimiste de l'état local
+        const oldSlot = restaurantData.spotlights[type];
         const newSlot = {
-            productId: restaurantData.spotlights[type].productId,
-            startsAt:  firebase.firestore.Timestamp.fromMillis(startsAtMs),
-            endsAt:    firebase.firestore.Timestamp.fromMillis(endsAtMs)
+            ...oldSlot,
+            startsAt: firebase.firestore.Timestamp.fromMillis(startsAtMs),
+            endsAt:   firebase.firestore.Timestamp.fromMillis(endsAtMs)
         };
         restaurantData.spotlights[type] = newSlot;
 
-        // Mise à jour partielle de Firestore (notation par chemin)
         try {
             await restaurantRef.update({ [`spotlights.${type}`]: newSlot });
             renderSpotlights();
-            renderProducts();   // pour rafraîchir les rubans dans la table produits
             showToast("Dates mises à jour", "success");
         } catch (err) {
             console.error(err);
@@ -2699,7 +2598,6 @@
         }
     }
 
-    // Retire le plat actuellement à l'honneur (quel que soit son type).
     async function removeSpotlight() {
         const current = getCurrentSpotlightSlot();
         if (!current) return;
@@ -2709,7 +2607,6 @@
             });
             delete restaurantData.spotlights[current.type];
             renderSpotlights();
-            renderProducts();
             showToast("Plat retiré", "success");
         } catch (err) {
             console.error(err);
@@ -2718,122 +2615,168 @@
     }
 
     // ========================================================================
-    // À L'HONNEUR — modale de sélection de produit
+    // À L'HONNEUR — formulaire de saisie directe
     // ========================================================================
-    function openProductPicker() {
-        if (products.length === 0) {
-            showToast("Créez d'abord au moins un produit.", "error");
-            switchTab("products");
-            return;
+
+    function renderSpotlightImageArea() {
+        const box = document.getElementById("spotlight-image-upload-area");
+        if (!box) return;
+        let imageSrc = null;
+        if (spotlightImageState.previewDataUrl) {
+            imageSrc = spotlightImageState.previewDataUrl;
+        } else if (spotlightImageState.pendingAction !== "remove" && spotlightImageState.currentUrl) {
+            imageSrc = spotlightImageState.currentUrl;
         }
-        const def = SPOTLIGHT_TYPES[currentSpotlightType];
-        document.getElementById("product-picker-title").innerText =
-            `${def.emoji} Choisir un plat — ${def.label}`;
-        document.getElementById("picker-search").value = "";
-        document.getElementById("product-picker-feedback").classList.remove("show");
-
-        renderProductPickerList();
-        document.getElementById("product-picker-modal").classList.add("show");
-        setTimeout(() => document.getElementById("picker-search").focus(), 100);
-    }
-
-    function closeProductPickerModal() {
-        document.getElementById("product-picker-modal").classList.remove("show");
-    }
-
-    function renderProductPickerList() {
-        const list = document.getElementById("picker-list");
-        const q = (document.getElementById("picker-search").value || "").trim().toLowerCase();
-
-        // Tri par catégorie (ordre des catégories) puis par ordre interne
-        const sorted = [...products].sort((a, b) => {
-            const catA = categories.findIndex(c => c.id === a.categoryId);
-            const catB = categories.findIndex(c => c.id === b.categoryId);
-            if (catA !== catB) return catA - catB;
-            return (a.order || 0) - (b.order || 0);
-        });
-
-        const filtered = q
-            ? sorted.filter(p =>
-                (p.name || "").toLowerCase().includes(q) ||
-                (p.description || "").toLowerCase().includes(q))
-            : sorted;
-
-        if (filtered.length === 0) {
-            list.innerHTML = `<div class="picker-empty">Aucun produit ne correspond.</div>`;
-            return;
-        }
-
-        list.innerHTML = filtered.map(p => {
-            const cat = categories.find(c => c.id === p.categoryId);
-            const catName = cat ? cat.name : "—";
-            const priceFmt = (parseFloat(p.price) || 0).toFixed(2) + "€";
-            const thumbHtml = p.imageUrl
-                ? `<img src="${escapeHtml(cldImageUrl(p.imageUrl, 150))}" alt="" loading="lazy">`
-                : `🍽️`;
-            return `
-                <div class="picker-row" onclick="selectProductForSpotlight('${escapeAttrJs(p.id)}')">
-                    <div class="picker-thumb">${thumbHtml}</div>
-                    <div class="picker-info">
-                        <div class="picker-name">${escapeHtml(p.name || "")}</div>
-                        <div class="picker-meta">${escapeHtml(catName)}</div>
+        if (imageSrc) {
+            box.classList.add("has-image");
+            box.innerHTML = `
+                <div class="image-preview-wrap">
+                    <img src="${escapeHtml(cldImageUrl(imageSrc, 600))}" alt="Aperçu">
+                    <div class="image-preview-actions">
+                        <button type="button" class="image-action-btn" onclick="document.getElementById('spotlight-image-input').click()">Changer</button>
+                        <button type="button" class="image-action-btn danger" onclick="removeSpotlightImage()">×</button>
                     </div>
-                    <div class="picker-price">${priceFmt}</div>
                 </div>`;
-        }).join("");
+        } else {
+            box.classList.remove("has-image");
+            box.innerHTML = `
+                <div class="image-empty" onclick="document.getElementById('spotlight-image-input').click()">
+                    <span class="ic">📷</span>
+                    <div class="lbl">Cliquez pour ajouter une photo</div>
+                    <div class="hint">JPG, PNG, WEBP — max 10 Mo (sera optimisée)</div>
+                </div>`;
+        }
     }
 
-    // Échappe une valeur destinée à une chaîne JS (entre apostrophes) dans un attribut onclick="…"
-    function escapeAttrJs(str) {
-        return String(str || "").replace(/[\\']/g, c => ({ "\\": "\\\\", "'": "\\'" }[c]));
+    function handleSpotlightImageSelect(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            showToast("Format non supporté. Utilisez JPG, PNG ou WEBP.", "error");
+            event.target.value = "";
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            showToast("Image trop volumineuse (10 Mo max).", "error");
+            event.target.value = "";
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            spotlightImageState.pendingAction = file;
+            spotlightImageState.previewDataUrl = e.target.result;
+            renderSpotlightImageArea();
+        };
+        reader.readAsDataURL(file);
     }
 
-    async function selectProductForSpotlight(productId) {
-        const type = currentSpotlightType;
-        const def = SPOTLIGHT_TYPES[type];
-        if (!def) return;
+    function removeSpotlightImage() {
+        if (spotlightImageState.previewDataUrl) {
+            spotlightImageState.pendingAction = null;
+            spotlightImageState.previewDataUrl = null;
+        } else if (spotlightImageState.currentUrl) {
+            spotlightImageState.pendingAction = "remove";
+            spotlightImageState.currentUrl = null;
+        }
+        document.getElementById("spotlight-image-input").value = "";
+        renderSpotlightImageArea();
+    }
 
-        const product = products.find(p => p.id === productId);
-        if (!product) {
-            const fb = document.getElementById("product-picker-feedback");
-            fb.innerText = "Produit introuvable.";
+    function openSpotlightForm(isEdit) {
+        const def = SPOTLIGHT_TYPES[currentSpotlightType];
+        document.getElementById("spotlight-form-title").innerText =
+            `${def.emoji} ${isEdit ? "Modifier" : "Ajouter"} — ${def.label}`;
+        document.getElementById("spotlight-form-feedback").classList.remove("show");
+        document.getElementById("spotlight-form-confirm").disabled = false;
+        document.getElementById("spotlight-form-confirm").innerText = "Publier";
+
+        const slots = (restaurantData && restaurantData.spotlights) || {};
+        const slot = isEdit ? slots[currentSpotlightType] : null;
+
+        document.getElementById("spotlight-name").value  = slot ? (slot.name || "") : "";
+        document.getElementById("spotlight-desc").value  = slot ? (slot.description || "") : "";
+        document.getElementById("spotlight-price").value = slot ? (slot.price || "") : "";
+
+        spotlightImageState = {
+            currentUrl:     slot ? (slot.imageUrl || null) : null,
+            pendingAction:  null,
+            previewDataUrl: null
+        };
+        renderSpotlightImageArea();
+
+        document.getElementById("spotlight-form-modal").classList.add("show");
+        setTimeout(() => document.getElementById("spotlight-name").focus(), 100);
+    }
+
+    function closeSpotlightFormModal() {
+        document.getElementById("spotlight-form-modal").classList.remove("show");
+        document.getElementById("spotlight-image-input").value = "";
+    }
+
+    async function saveSpotlight() {
+        const name        = document.getElementById("spotlight-name").value.trim();
+        const description = document.getElementById("spotlight-desc").value.trim();
+        const price       = parseFloat(document.getElementById("spotlight-price").value) || 0;
+        const fb          = document.getElementById("spotlight-form-feedback");
+
+        if (!name) {
+            fb.innerText = "Le nom du plat est requis.";
             fb.classList.add("show");
             return;
         }
 
-        const startsAtMs = Date.now();
-        const endsAtMs   = startsAtMs + def.durationDays * 24 * 60 * 60 * 1000;
-        const newSlot = {
-            productId,
-            startsAt: firebase.firestore.Timestamp.fromMillis(startsAtMs),
-            endsAt:   firebase.firestore.Timestamp.fromMillis(endsAtMs)
-        };
+        const btn = document.getElementById("spotlight-form-confirm");
+        btn.disabled = true;
 
-        // S'il y avait déjà un plat en place dans un autre slot (changement de type entre temps),
-        // on libère tous les anciens slots pour ne garder que celui qu'on remplit.
-        if (!restaurantData.spotlights) restaurantData.spotlights = {};
-        const slotsToFree = ["day","week","month"]
-            .filter(t => t !== type && restaurantData.spotlights[t]);
+        const type = currentSpotlightType;
+        const def  = SPOTLIGHT_TYPES[type];
 
         try {
+            let imageUrl = spotlightImageState.currentUrl || "";
+
+            if (spotlightImageState.pendingAction instanceof File) {
+                btn.innerText = "Optimisation…";
+                const blob = await resizeImage(spotlightImageState.pendingAction);
+                btn.innerText = "Téléchargement…";
+                const { url } = await uploadProductImage(blob, "spotlight-" + type);
+                imageUrl = url;
+            } else if (spotlightImageState.pendingAction === "remove") {
+                imageUrl = "";
+            }
+
+            const now = Date.now();
+            const slots = (restaurantData && restaurantData.spotlights) || {};
+            const existingSlot = slots[type];
+            const startsAtMs = existingSlot ? (tsToMillis(existingSlot.startsAt) || now) : now;
+            const endsAtMs   = startsAtMs + def.durationDays * 24 * 60 * 60 * 1000;
+
+            const newSlot = {
+                name, description, price, imageUrl,
+                startsAt: firebase.firestore.Timestamp.fromMillis(startsAtMs),
+                endsAt:   firebase.firestore.Timestamp.fromMillis(endsAtMs)
+            };
+
+            if (!restaurantData.spotlights) restaurantData.spotlights = {};
             const updatePayload = { [`spotlights.${type}`]: newSlot };
-            slotsToFree.forEach(t => {
-                updatePayload[`spotlights.${t}`] = firebase.firestore.FieldValue.delete();
+            ["day","week","month"].forEach(t => {
+                if (t !== type && restaurantData.spotlights[t]) {
+                    updatePayload[`spotlights.${t}`] = firebase.firestore.FieldValue.delete();
+                }
             });
             await restaurantRef.update(updatePayload);
 
-            slotsToFree.forEach(t => delete restaurantData.spotlights[t]);
+            ["day","week","month"].forEach(t => { if (t !== type) delete restaurantData.spotlights[t]; });
             restaurantData.spotlights[type] = newSlot;
 
+            closeSpotlightFormModal();
             renderSpotlights();
-            renderProducts();
-            closeProductPickerModal();
-            showToast(`${def.emoji} ${def.label} — « ${product.name} » mis à l'honneur`, "success");
+            showToast(`${def.emoji} ${def.label} publié !`, "success");
         } catch (err) {
             console.error(err);
-            const fb = document.getElementById("product-picker-feedback");
             fb.innerText = "Erreur lors de la sauvegarde. Réessayez.";
             fb.classList.add("show");
+            btn.disabled = false;
+            btn.innerText = "Publier";
         }
     }
 
@@ -3288,32 +3231,6 @@
         return 0;
     }
 
-    // Retourne l'état du spotlight d'un produit en cherchant dans restaurantData.spotlights.
-    // Retourne null si le produit n'est pas spotlight, ou si le spotlight est expiré/futur.
-    // -> { type, label, emoji, startsAt(ms), endsAt(ms), expired (bool), notYetActive (bool) }
-    function getSpotlightState(p) {
-        if (!p || !restaurantData || !restaurantData.spotlights) return null;
-        const slots = restaurantData.spotlights;
-        for (const type of ["day", "week", "month"]) {
-            const slot = slots[type];
-            if (slot && slot.productId === p.id) {
-                const def = SPOTLIGHT_TYPES[type];
-                if (!def) continue;
-                const startsAt = tsToMillis(slot.startsAt);
-                const endsAt   = tsToMillis(slot.endsAt);
-                const now = Date.now();
-                return {
-                    type,
-                    label: def.label,
-                    emoji: def.emoji,
-                    startsAt, endsAt,
-                    expired: endsAt > 0 && endsAt < now,
-                    notYetActive: startsAt > now
-                };
-            }
-        }
-        return null;
-    }
 
     // Format court : "12 mars" (sans année si année courante)
     function formatShortDate(ms) {
