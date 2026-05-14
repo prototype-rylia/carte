@@ -900,10 +900,11 @@
       .tabs-arrow-left  { left: 0;  box-shadow:  6px 0 10px -4px rgba(255,255,255,0.9); }
       .tabs-arrow-right { right: 0; box-shadow: -6px 0 10px -4px rgba(255,255,255,0.9); }
       .tabs-nav {
-        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
         gap: 0; flex-wrap: nowrap;
         scrollbar-width: none; -ms-overflow-style: none;
         padding: 0 30px;
+        touch-action: pan-x;
       }
       .tabs-nav::-webkit-scrollbar { display: none; }
       .tab-btn { padding: 10px 14px; font-size: 12px; white-space: nowrap; flex-shrink: 0; min-height: 40px; }
