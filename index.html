@@ -434,22 +434,6 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .footer-legal {
-            text-align: center;
-            padding: 30px 20px;
-            margin-top: 20px;
-        }
-        .btn-cgu {
-            display: inline-block;
-            font-size: 12px;
-            color: var(--text-grey);
-            text-decoration: underline;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-family: inherit;
-        }
-
         .btn-reset-filters {
             margin-top: 15px;
             color: var(--primary-orange);
@@ -616,9 +600,6 @@
             <button class="btn-reset-filters" onclick="resetFilters()">Effacer les filtres</button>
         </div>
 
-        <footer class="footer-legal">
-            <button class="btn-cgu" onclick="openLegalPage()">Mentions Légales, CGU</button>
-        </footer>
     </div>
 
     <script>
@@ -1001,40 +982,6 @@
             }[c]));
         }
 
-        function openLegalPage() {
-            const name = (restaurantInfo && restaurantInfo.name) ? restaurantInfo.name : "[NOM DU RESTAURANT]";
-            const w = window.open("", "_blank");
-            w.document.write(`
-                <html><head><title>CGU & Mentions Légales</title>
-                <style>
-                    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; padding: 50px; color: #2d2d2d; max-width: 750px; margin: auto; }
-                    h1 { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-                    h2 { font-size: 1.2rem; font-weight: 700; margin-top: 30px; }
-                    h3 { font-size: 1rem; font-weight: 700; color: #555; }
-                    p, li { font-size: 0.95rem; color: #444; }
-                    hr { border: 0; border-top: 1px solid #eee; margin: 40px 0; }
-                </style></head><body>
-                <h1>Mentions Légales & CGU</h1>
-                <section>
-                    <h2>I. ÉDITION</h2>
-                    <p><strong>Éditeur :</strong> Ce site est édité par l'établissement <strong>${escapeHtml(name)}</strong>. SIRET : [NUMÉRO].</p>
-                    <p><strong>Conception technique :</strong> Rylia | contact@rylia.fr</p>
-                </section>
-                <section>
-                    <h2>II. UTILISATION</h2>
-                    <h3>1. Objet</h3>
-                    <p>La présente carte digitale permet la consultation des produits et tarifs. Les informations sont données à titre indicatif.</p>
-                    <h3>2. Allergènes</h3>
-                    <p>Les informations sur les allergènes sont basées sur les fiches techniques de nos fournisseurs.</p>
-                </section>
-                <section>
-                    <h2>III. RGPD</h2>
-                    <p>Cette carte digitale est purement informative et ne collecte aucune donnée personnelle lors de sa consultation.</p>
-                </section>
-                <hr><p style="font-size: 0.8rem; color: #999;">Dernière mise à jour : ${new Date().toLocaleDateString('fr-FR')}</p>
-                </body></html>
-            `);
-        }
 
         init();
     </script>
