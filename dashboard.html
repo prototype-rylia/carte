@@ -10,7 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <style>
-    html { overflow-y: scroll; overflow-x: hidden; }
+    html { overflow-y: scroll; overflow-x: hidden; touch-action: manipulation; }
     body { overflow-x: hidden; }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -2927,7 +2927,7 @@
                     <div class="tax-row">
                         <span class="tax-emoji">${escapeHtml(h.emoji || "")}</span>
                         <span class="tax-pill-preview" style="background:${c.bg}; color:${c.fg};">${escapeHtml(h.label)}</span>
-                        <span class="tax-label" style="font-size:12px; color:var(--gray); flex:0 1 auto;">${usageCount} produit${usageCount > 1 ? "s" : ""}</span>
+                        <span class="tax-label tax-usage-count" style="font-size:12px; color:var(--gray); flex:0 1 auto;">${usageCount} produit${usageCount > 1 ? "s" : ""}</span>
                         <span style="flex:1;"></span>
                         <div class="tax-actions">
                             <button class="btn-move" onclick="moveTaxonomy('highlight', '${h.id}', -1)" ${i === 0 ? "disabled" : ""}>↑</button>
@@ -3299,7 +3299,23 @@
 
     function scrollTabs(dir) {
         const nav = document.getElementById("tabs-nav");
-        nav.scrollBy({ left: dir * 150, behavior: "smooth" });
+        const btns = Array.from(nav.querySelectorAll(".tab-btn"));
+        const pad = 30;
+        const sl = nav.scrollLeft;
+        const visibleStart = sl + pad;
+        const visibleEnd = sl + nav.clientWidth - pad;
+
+        if (dir === 1) {
+            // Premier onglet dont le bord droit dépasse la zone visible → on l'aligne à gauche
+            const target = btns.find(b => b.offsetLeft + b.offsetWidth > visibleEnd + 2);
+            if (target) nav.scrollTo({ left: Math.max(0, target.offsetLeft - pad), behavior: "smooth" });
+        } else {
+            // Onglet juste avant le premier complètement visible → on l'aligne à gauche
+            const firstFull = btns.find(b => b.offsetLeft >= visibleStart - 2);
+            const idx = firstFull ? btns.indexOf(firstFull) : 0;
+            const target = btns[Math.max(0, idx - 1)];
+            if (target) nav.scrollTo({ left: Math.max(0, target.offsetLeft - pad), behavior: "smooth" });
+        }
     }
     function updateTabArrows() {
         const nav = document.getElementById("tabs-nav");
